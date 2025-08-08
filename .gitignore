@@ -51,3 +51,6 @@ tags
 .idea/
 .aider*
 "qlib_bin.tar.gz" 
+"qlib_bin.tar.gz" 
+*.tar.gz
+
