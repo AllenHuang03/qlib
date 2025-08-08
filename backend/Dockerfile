@@ -2,20 +2,14 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Copy minimal requirements first for better caching
+COPY requirements_minimal.txt .
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies (minimal set)
+RUN pip install --no-cache-dir -r requirements_minimal.txt
 
 # Copy application code
-COPY . .
+COPY minimal_api.py .
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash qlib
@@ -25,4 +19,4 @@ USER qlib
 EXPOSE 8000
 
 # Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "app:app"]
+CMD ["python", "minimal_api.py"]

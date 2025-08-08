@@ -1,1 +1,1 @@
-web: cd backend && pip install -r requirements_simple.txt && python simple_production_api.py
+web: cd backend && pip install -r requirements_minimal.txt && python minimal_api.py
