@@ -11,7 +11,9 @@
       "WebFetch(domain:itexus.com)",
       "WebFetch(domain:goodux.appcues.com)",
       "WebFetch(domain:userpilot.com)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(npm run build:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": []
   }

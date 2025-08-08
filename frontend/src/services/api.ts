@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 
 // Use environment variable or fallback to mock mode
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-const USE_MOCK_MODE = !API_BASE_URL || API_BASE_URL.includes('your-backend.railway.app');
+const USE_MOCK_MODE = !API_BASE_URL;
 
 // Create axios instance
 const api = axios.create({

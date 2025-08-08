@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "startCommand": "cd backend && python simple_production_api.py",
+    "healthcheckPath": "/api/health"
+  }
+}
