@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(grep:*)",
+      "Bash(set PORT=8004)",
+      "WebFetch(domain:itexus.com)",
+      "WebFetch(domain:goodux.appcues.com)",
+      "WebFetch(domain:userpilot.com)",
+      "Bash(touch:*)"
+    ],
+    "deny": []
+  }
+}
