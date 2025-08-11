@@ -9,7 +9,7 @@ COPY requirements_minimal.txt .
 RUN pip install --no-cache-dir -r requirements_minimal.txt
 
 # Copy application code
-COPY minimal_api.py .
+COPY hybrid_api.py .
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash qlib
@@ -19,4 +19,4 @@ USER qlib
 EXPOSE 8000
 
 # Run the application
-CMD ["python", "minimal_api.py"]
+CMD ["python", "hybrid_api.py"]

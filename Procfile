@@ -1,1 +1,1 @@
-web: cd backend && pip install -r requirements_minimal.txt && python minimal_api.py
+web: cd backend && pip install -r requirements_minimal.txt && python hybrid_api.py
