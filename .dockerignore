@@ -1,8 +1,5 @@
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.Python
-.env
-.git
-
+# Ignore everything except our API files
+*
+!minimal_api.py
+!requirements.txt
+!Dockerfile

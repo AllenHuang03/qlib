@@ -1,0 +1,14 @@
+[variables]
+    NIXPACKS_NO_DEFAULT_CACHE_DIRECTORIES = "1"
+
+[phases.setup]
+    nixPkgs = ["python3", "pip"]
+
+[phases.install]
+    cmds = ["pip install --no-cache-dir -r requirements.txt"]
+
+[phases.build]
+    cmds = ["echo 'Build complete'"]
+
+[start]
+    cmd = "python minimal_api.py"
