@@ -1,1 +1,1 @@
-web: pip install -r backend/requirements_supabase.txt && python backend/supabase_api.py
+web: pip install -r backend/requirements_minimal.txt && python backend/hybrid_api.py
