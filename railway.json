@@ -3,7 +3,7 @@
     "builder": "nixpacks"
   },
   "deploy": {
-    "startCommand": "cd backend && python simple_production_api.py",
+    "startCommand": "python backend/hybrid_api.py",
     "healthcheckPath": "/api/health"
   }
 }
