@@ -1,9 +1,0 @@
-{
-  "build": {
-    "builder": "nixpacks"
-  },
-  "deploy": {
-    "startCommand": "python backend/minimal_api.py",
-    "healthcheckPath": "/api/health"
-  }
-}

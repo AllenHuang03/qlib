@@ -1,1 +1,1 @@
-web: pip install -r backend/requirements_minimal.txt && python backend/minimal_api.py
+web: pip install -r requirements_minimal.txt && python minimal_api.py

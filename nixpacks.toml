@@ -1,8 +1,0 @@
-[phases.setup]
-nixpkgs = ['python39', 'pip']
-
-[phases.install]
-cmds = ['pip install -r backend/requirements_minimal.txt']
-
-[start]
-cmd = 'python backend/minimal_api.py'
