@@ -2,7 +2,7 @@
 nixpkgs = ['python39', 'pip']
 
 [phases.install]
-cmds = ['pip install -r backend/requirements_minimal.txt']
+cmds = ['pip install -r backend/requirements_supabase.txt']
 
 [start]
-cmd = 'python backend/hybrid_api.py'
+cmd = 'python backend/supabase_api.py'
