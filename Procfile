@@ -1,1 +1,1 @@
-web: pip install -r requirements_minimal.txt && python minimal_api.py
+web: pip install -r requirements.txt && python minimal_api.py
