@@ -137,6 +137,19 @@ export const authAPI = {
     return response.data;
   },
 
+  register: async (email: string, password: string, name: string): Promise<{
+    message: string;
+    user?: any;
+    requires_verification?: boolean;
+  }> => {
+    const response = await api.post('/auth/register', {
+      email,
+      password,
+      name,
+    });
+    return response.data;
+  },
+
   getProfile: async (): Promise<User> => {
     const response: AxiosResponse<User> = await api.get('/auth/profile');
     return response.data;

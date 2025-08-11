@@ -1,73 +1,101 @@
 import { create } from 'zustand';
+import { authAPI } from '../services/api';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'trader' | 'analyst';
+  role: string;
+  status?: string;
+  subscription_tier?: string;
+  paper_trading?: boolean;
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   token: string | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
   setUser: (user: User) => void;
+  initializeAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   token: null,
+  loading: false,
 
   login: async (email: string, password: string) => {
+    set({ loading: true });
     try {
-      // Simple demo login - supports both user and admin
+      // Use real API for authentication
+      const response = await authAPI.login(email, password);
+      
+      const user: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        role: response.user.role || 'user',
+        status: response.user.status,
+        subscription_tier: response.user.subscription_tier,
+        paper_trading: response.user.paper_trading
+      };
+      
+      // Store token
+      localStorage.setItem('auth-token', response.access_token);
+      
+      set({
+        user,
+        isAuthenticated: true,
+        token: response.access_token,
+        loading: false
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      set({ loading: false });
+      
+      // Fallback to demo login for testing
       if (email === 'demo@qlib.com' && password === 'demo123') {
         const user: User = {
-          id: '1',
+          id: 'demo-user-1',
           email: 'demo@qlib.com',
           name: 'Demo User',
-          role: 'trader',
+          role: 'user',
+          subscription_tier: 'free',
+          paper_trading: true
         };
         
-        // Store token
         localStorage.setItem('auth-token', 'demo-token-123');
         
         set({
           user,
           isAuthenticated: true,
           token: 'demo-token-123',
-        });
-        
-        return true;
-      }
-      
-      // Admin login
-      if (email === 'admin@qlib.ai' && password === 'admin123') {
-        const user: User = {
-          id: '2',
-          email: 'admin@qlib.ai',
-          name: 'Admin User',
-          role: 'admin',
-        };
-        
-        // Store token
-        localStorage.setItem('auth-token', 'demo-token-123');
-        
-        set({
-          user,
-          isAuthenticated: true,
-          token: 'demo-token-123',
+          loading: false
         });
         
         return true;
       }
       
       return false;
-    } catch (error: any) {
-      console.error('Login error:', error);
+    }
+  },
+
+  register: async (email: string, password: string, name: string) => {
+    set({ loading: true });
+    try {
+      await authAPI.register(email, password, name);
+      set({ loading: false });
+      return true;
+    } catch (error) {
+      console.error('Registration error:', error);
+      set({ loading: false });
       return false;
     }
   },
@@ -78,10 +106,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       isAuthenticated: false,
       token: null,
+      loading: false
     });
   },
 
   setUser: (user: User) => {
     set({ user });
+  },
+
+  initializeAuth: async () => {
+    const token = localStorage.getItem('auth-token');
+    if (token) {
+      try {
+        // Try to get user profile with stored token
+        const userProfile = await authAPI.getProfile();
+        set({
+          user: userProfile,
+          isAuthenticated: true,
+          token
+        });
+      } catch (error) {
+        // Token is invalid, clear it
+        localStorage.removeItem('auth-token');
+        set({
+          user: null,
+          isAuthenticated: false,
+          token: null
+        });
+      }
+    }
   },
 }));

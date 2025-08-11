@@ -8,9 +8,11 @@ import {
   Box,
   Alert,
   CircularProgress,
+  Link,
 } from '@mui/material';
 import { TrendingUp } from '@mui/icons-material';
 import { useAuthStore } from '../../store/authStore';
+import { Link as RouterLink } from 'react-router-dom';
 
 export default function Login() {
   const [email, setEmail] = useState('demo@qlib.com');
@@ -101,6 +103,14 @@ export default function Login() {
             >
               {loading ? <CircularProgress size={24} /> : 'Sign In'}
             </Button>
+            <Box textAlign="center">
+              <Typography variant="body2" color="text.secondary">
+                Don't have an account?{' '}
+                <Link component={RouterLink} to="/register" underline="hover">
+                  Sign up
+                </Link>
+              </Typography>
+            </Box>
           </Box>
 
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
