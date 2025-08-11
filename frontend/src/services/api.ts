@@ -358,4 +358,40 @@ export const healthAPI = {
   },
 };
 
+// Market Data API
+export const marketAPI = {
+  getQuote: async (symbol: string) => {
+    const response = await api.get(`/market/quote/${symbol}`);
+    return response.data;
+  },
+
+  getQuotes: async (symbols: string = "AAPL,MSFT,GOOGL,TSLA") => {
+    const response = await api.get(`/market/quotes?symbols=${symbols}`);
+    return response.data;
+  },
+
+  getHistoricalData: async (symbol: string, days: number = 30) => {
+    const response = await api.get(`/market/historical/${symbol}?days=${days}`);
+    return response.data;
+  },
+
+  getMarketNews: async (query: string = "stock market", limit: number = 10) => {
+    const response = await api.get(`/market/news?query=${query}&limit=${limit}`);
+    return response.data;
+  }
+};
+
+// AI Trading API
+export const aiAPI = {
+  getSignals: async (symbols: string = "AAPL,MSFT,GOOGL,TSLA,NVDA") => {
+    const response = await api.get(`/ai/signals?symbols=${symbols}`);
+    return response.data;
+  },
+
+  getAnalysis: async (symbol: string) => {
+    const response = await api.get(`/ai/analysis/${symbol}`);
+    return response.data;
+  }
+};
+
 export default api;

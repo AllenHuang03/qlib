@@ -31,6 +31,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AIInsightsModal from '../../components/AIInsights/AIInsightsModal';
+import { aiAPI } from '../../services/api';
 
 const mockPerformanceData = [
   { date: 'Jan', portfolio: 100000, benchmark: 100000, month: 'January' },
@@ -42,24 +43,25 @@ const mockPerformanceData = [
   { date: 'Jul', portfolio: 122340, benchmark: 108900, month: 'July' },
 ];
 
-const aiOpportunities = [
+// Real AI opportunities will be loaded from API
+const defaultOpportunities = [
   {
     symbol: 'AAPL',
     name: 'Apple Inc.',
     signal: 'BUY',
     confidence: 92,
-    price: '$182.50',
-    change: '+2.3%',
-    reason: 'Strong earnings momentum',
+    price: '$229.35',
+    change: '+4.24%',
+    reason: 'Loading real market data...',
   },
   {
     symbol: 'MSFT',
     name: 'Microsoft Corp.',
-    signal: 'BUY',
+    signal: 'BUY', 
     confidence: 89,
     price: '$337.20',
     change: '+1.8%',
-    reason: 'AI infrastructure growth',
+    reason: 'Loading real market data...',
   },
   {
     symbol: 'GOOGL',
@@ -68,7 +70,7 @@ const aiOpportunities = [
     confidence: 76,
     price: '$134.80',
     change: '-0.5%',
-    reason: 'Market consolidation',
+    reason: 'Loading real market data...',
   },
 ];
 
@@ -79,6 +81,8 @@ export default function Dashboard() {
   const [isPaperMode, setIsPaperMode] = useState(true);
   const [selectedStock, setSelectedStock] = useState<any>(null);
   const [aiInsightsOpen, setAiInsightsOpen] = useState(false);
+  const [aiOpportunities, setAiOpportunities] = useState(defaultOpportunities);
+  const [loadingSignals, setLoadingSignals] = useState(false);
   
   // Check if user came from registration (paper mode)
   useEffect(() => {
@@ -88,6 +92,48 @@ export default function Dashboard() {
       setIsPaperMode(true);
     }
   }, [location]);
+
+  // Load real AI signals
+  useEffect(() => {
+    const loadAISignals = async () => {
+      setLoadingSignals(true);
+      try {
+        const signals = await aiAPI.getSignals("AAPL,MSFT,GOOGL");
+        
+        // Convert API signals to dashboard format
+        const opportunities = signals.map((signal: any) => ({
+          symbol: signal.symbol,
+          name: getCompanyName(signal.symbol),
+          signal: signal.signal,
+          confidence: Math.round(signal.confidence * 100),
+          price: `$${signal.target_price || 'N/A'}`,
+          change: '+0.00%', // Will be updated with real quote data
+          reason: signal.reasoning,
+        }));
+        
+        setAiOpportunities(opportunities);
+      } catch (error) {
+        console.error('Failed to load AI signals:', error);
+        // Keep default data if API fails
+      } finally {
+        setLoadingSignals(false);
+      }
+    };
+
+    loadAISignals();
+  }, []);
+
+  // Helper function to get company names
+  const getCompanyName = (symbol: string) => {
+    const names: { [key: string]: string } = {
+      'AAPL': 'Apple Inc.',
+      'MSFT': 'Microsoft Corp.',
+      'GOOGL': 'Alphabet Inc.',
+      'TSLA': 'Tesla Inc.',
+      'NVDA': 'NVIDIA Corp.',
+    };
+    return names[symbol] || symbol;
+  };
 
   const portfolioValue = isPaperMode ? 122340 : 45230;
   const totalGain = isPaperMode ? 22340 : 5230;
