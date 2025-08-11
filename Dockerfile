@@ -1,31 +1,21 @@
-FROM continuumio/miniconda3:latest
+# Simple Railway Dockerfile for API
+FROM python:3.9-slim
 
-WORKDIR /qlib
+# Set working directory
+WORKDIR /app
 
-COPY . .
+# Copy our files
+COPY requirements.txt .
+COPY minimal_api.py .
 
-RUN apt-get update && \
-    apt-get install -y build-essential
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN conda create --name qlib_env python=3.8 -y
-RUN echo "conda activate qlib_env" >> ~/.bashrc
-ENV PATH /opt/conda/envs/qlib_env/bin:$PATH
+# Expose port
+EXPOSE 8000
 
-RUN python -m pip install --upgrade pip
+# Set environment variable
+ENV PORT=8000
 
-RUN python -m pip install numpy==1.23.5
-RUN python -m pip install pandas==1.5.3
-RUN python -m pip install importlib-metadata==5.2.0
-RUN python -m pip install "cloudpickle<3"
-RUN python -m pip install scikit-learn==1.3.2
-
-RUN python -m pip install cython packaging tables matplotlib statsmodels
-RUN python -m pip install pybind11 cvxpy
-
-ARG IS_STABLE="yes"
-
-RUN if [ "$IS_STABLE" = "yes" ]; then \
-        python -m pip install pyqlib; \
-    else \
-        python setup.py install; \
-    fi
+# Run the API
+CMD ["python", "minimal_api.py"]
