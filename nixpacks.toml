@@ -5,4 +5,4 @@ nixpkgs = ['python39', 'pip']
 cmds = ['pip install -r backend/requirements_minimal.txt']
 
 [start]
-cmd = 'python backend/hybrid_api.py'
+cmd = 'python backend/minimal_api.py'

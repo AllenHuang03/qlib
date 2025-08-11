@@ -3,7 +3,7 @@
     "builder": "nixpacks"
   },
   "deploy": {
-    "startCommand": "python backend/hybrid_api.py",
+    "startCommand": "python backend/minimal_api.py",
     "healthcheckPath": "/api/health"
   }
 }
