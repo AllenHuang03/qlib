@@ -504,8 +504,8 @@ async def get_stock_quote(symbol: str):
     return await market_service.get_stock_quote(symbol.upper())
 
 @app.get("/api/market/quotes")
-async def get_multiple_quotes(symbols: str = "AAPL,MSFT,GOOGL,TSLA"):
-    """Get multiple stock quotes"""
+async def get_multiple_quotes(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,TLS.AX"):
+    """Get multiple stock quotes - defaults to major ASX stocks"""
     symbol_list = [s.strip().upper() for s in symbols.split(",")]
     quotes = []
     
@@ -520,12 +520,154 @@ async def get_multiple_quotes(symbols: str = "AAPL,MSFT,GOOGL,TSLA"):
     return {
         "quotes": quotes,
         "timestamp": datetime.now().isoformat(),
-        "total": len(quotes)
+        "total": len(quotes),
+        "market": "ASX" if any(s.endswith('.AX') for s in symbol_list) else "Mixed"
     }
 
+@app.get("/api/market/status")
+async def get_market_status():
+    """Get Australian market status and trading hours"""
+    from datetime import datetime
+    import pytz
+    
+    try:
+        # Australian Eastern Time
+        aest = pytz.timezone('Australia/Sydney')
+        now_aest = datetime.now(aest)
+        
+        # Market hours: 10:00 AM to 4:00 PM AEST
+        market_open = now_aest.replace(hour=10, minute=0, second=0, microsecond=0)
+        market_close = now_aest.replace(hour=16, minute=0, second=0, microsecond=0)
+        
+        # Check if market is open (Monday-Friday only)
+        is_weekday = now_aest.weekday() < 5  # 0-4 = Monday-Friday
+        is_market_hours = market_open <= now_aest <= market_close
+        is_open = is_weekday and is_market_hours
+        
+        # Calculate next open/close time
+        if is_open:
+            next_change = market_close
+            next_status = "Market closes"
+        else:
+            if now_aest.hour < 10:
+                next_change = market_open
+            else:
+                # Next trading day
+                next_change = market_open + timedelta(days=1)
+                while next_change.weekday() > 4:  # Skip weekends
+                    next_change += timedelta(days=1)
+            next_status = "Market opens"
+        
+        return {
+            "market": "ASX",
+            "status": "OPEN" if is_open else "CLOSED",
+            "timezone": "Australia/Sydney (AEST/AEDT)",
+            "current_time": now_aest.strftime("%Y-%m-%d %H:%M:%S %Z"),
+            "trading_hours": "10:00 AM - 4:00 PM AEST",
+            "next_change": {
+                "time": next_change.strftime("%Y-%m-%d %H:%M:%S %Z"),
+                "status": next_status
+            },
+            "indices": {
+                "asx_200": "All Ordinaries 200 Index",
+                "all_ords": "All Ordinaries Index"
+            }
+        }
+    except ImportError:
+        # Fallback if pytz is not available
+        return {
+            "market": "ASX", 
+            "status": "UNKNOWN",
+            "message": "Install pytz for accurate market hours",
+            "trading_hours": "10:00 AM - 4:00 PM AEST (Monday-Friday)"
+        }
+
+@app.get("/api/market/currency")
+async def get_currency_rates():
+    """Get USD/AUD exchange rate for price conversion"""
+    try:
+        async with httpx.AsyncClient() as client:
+            # Using Alpha Vantage for currency data
+            url = f"https://www.alphavantage.co/query"
+            params = {
+                "function": "CURRENCY_EXCHANGE_RATE",
+                "from_currency": "USD",
+                "to_currency": "AUD", 
+                "apikey": ALPHA_VANTAGE_KEY
+            }
+            
+            response = await client.get(url, params=params)
+            data = response.json()
+            
+            if "Realtime Currency Exchange Rate" in data:
+                rate_data = data["Realtime Currency Exchange Rate"]
+                usd_to_aud = float(rate_data["5. Exchange Rate"])
+                
+                return {
+                    "from": "USD",
+                    "to": "AUD", 
+                    "rate": usd_to_aud,
+                    "last_updated": rate_data["6. Last Refreshed"],
+                    "bid_price": float(rate_data["8. Bid Price"]),
+                    "ask_price": float(rate_data["9. Ask Price"]),
+                    "helper": {
+                        "convert_usd_to_aud": lambda usd: round(usd * usd_to_aud, 2),
+                        "convert_aud_to_usd": lambda aud: round(aud / usd_to_aud, 2)
+                    }
+                }
+            else:
+                # Fallback with approximate rate
+                return {
+                    "from": "USD",
+                    "to": "AUD",
+                    "rate": 1.52,  # Approximate rate
+                    "source": "fallback",
+                    "note": "Using fallback rate - Alpha Vantage API limit reached"
+                }
+                
+    except Exception as e:
+        print(f"Currency API error: {e}")
+        return {
+            "from": "USD", 
+            "to": "AUD",
+            "rate": 1.52,  # Conservative fallback rate
+            "source": "error_fallback",
+            "error": "Currency service temporarily unavailable"
+        }
+
+@app.get("/api/market/convert")
+async def convert_currency(amount: float, from_currency: str = "USD", to_currency: str = "AUD"):
+    """Convert currency amounts (USD <-> AUD)"""
+    try:
+        # Get current exchange rate
+        currency_data = await get_currency_rates()
+        rate = currency_data["rate"]
+        
+        if from_currency.upper() == "USD" and to_currency.upper() == "AUD":
+            converted = round(amount * rate, 2)
+            return {
+                "original": {"amount": amount, "currency": "USD"},
+                "converted": {"amount": converted, "currency": "AUD"},
+                "exchange_rate": rate,
+                "timestamp": datetime.now().isoformat()
+            }
+        elif from_currency.upper() == "AUD" and to_currency.upper() == "USD":
+            converted = round(amount / rate, 2)
+            return {
+                "original": {"amount": amount, "currency": "AUD"},
+                "converted": {"amount": converted, "currency": "USD"}, 
+                "exchange_rate": round(1/rate, 4),
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {"error": "Only USD <-> AUD conversion supported"}
+            
+    except Exception as e:
+        return {"error": f"Conversion failed: {str(e)}"}
+
 @app.get("/api/market/news")
-async def get_market_news(query: str = "stock market", limit: int = 10):
-    """Get financial news"""
+async def get_market_news(query: str = "ASX Australian stock market", limit: int = 10):
+    """Get Australian financial news"""
     return await market_service.get_market_news(query, limit)
 
 # ================================
@@ -533,8 +675,8 @@ async def get_market_news(query: str = "stock market", limit: int = 10):
 # ================================
 
 @app.get("/api/ai/signals")
-async def get_ai_signals(symbols: str = "AAPL,MSFT,GOOGL,TSLA,NVDA"):
-    """Get AI trading signals with fixed target price bug"""
+async def get_ai_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,RIO.AX"):
+    """Get AI trading signals for ASX stocks with advanced ML models"""
     symbol_list = [s.strip().upper() for s in symbols.split(",")]
     return await ai_service.generate_signals(symbol_list[:5])  # Limit to 5 symbols
 

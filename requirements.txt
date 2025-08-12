@@ -11,3 +11,6 @@ supabase>=2.0.0
 
 # Authentication
 pyotp>=2.9.0
+
+# Australian timezone support
+pytz>=2023.3
