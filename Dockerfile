@@ -10,11 +10,20 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all Python service files
-COPY *.py .
+# Debug: Show what files are available in build context
+RUN echo "=== BUILD CONTEXT DEBUG ===" && ls -la .
 
-# Verify files are copied (for debugging)
-RUN ls -la *.py
+# Debug: Show current directory contents
+RUN echo "=== AFTER REQUIREMENTS COPY ===" && ls -la
+
+# Copy specific service files (explicit paths)
+COPY main.py ./main.py
+COPY supabase_service.py ./supabase_service.py  
+COPY australian_market_service.py ./australian_market_service.py
+COPY auth_service.py ./auth_service.py
+
+# Verify files are copied
+RUN echo "=== FINAL FILE CHECK ===" && ls -la *.py
 
 # Expose port (Railway will set PORT env var)
 EXPOSE $PORT
