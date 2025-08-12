@@ -365,7 +365,7 @@ export const marketAPI = {
     return response.data;
   },
 
-  getQuotes: async (symbols: string = "AAPL,MSFT,GOOGL,TSLA") => {
+  getQuotes: async (symbols: string = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,TLS.AX") => {
     const response = await api.get(`/market/quotes?symbols=${symbols}`);
     return response.data;
   },
@@ -375,15 +375,41 @@ export const marketAPI = {
     return response.data;
   },
 
-  getMarketNews: async (query: string = "stock market", limit: number = 10) => {
+  getMarketNews: async (query: string = "ASX Australian stock market", limit: number = 10) => {
     const response = await api.get(`/market/news?query=${query}&limit=${limit}`);
+    return response.data;
+  },
+
+  // 🇦🇺 Australian Market Endpoints (Sprint 1)
+  getMarketStatus: async () => {
+    const response = await api.get('/market/status');
+    return response.data;
+  },
+
+  getCurrencyRates: async () => {
+    const response = await api.get('/market/currency');
+    return response.data;
+  },
+
+  convertCurrency: async (amount: number, from: string = "USD", to: string = "AUD") => {
+    const response = await api.get(`/market/convert?amount=${amount}&from_currency=${from}&to_currency=${to}`);
+    return response.data;
+  },
+
+  getASXIndices: async () => {
+    const response = await api.get('/market/indices');
+    return response.data;
+  },
+
+  getASXSectors: async () => {
+    const response = await api.get('/market/asx-sectors');
     return response.data;
   }
 };
 
 // AI Trading API
 export const aiAPI = {
-  getSignals: async (symbols: string = "AAPL,MSFT,GOOGL,TSLA,NVDA") => {
+  getSignals: async (symbols: string = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,RIO.AX") => {
     const response = await api.get(`/ai/signals?symbols=${symbols}`);
     return response.data;
   },
