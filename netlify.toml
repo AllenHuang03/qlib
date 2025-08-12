@@ -1,12 +1,66 @@
+# Netlify configuration for Qlib Pro Australian Trading Platform
 [build]
   base = "frontend"
   command = "npm run build"
   publish = "dist"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- frontend/"
 
 [build.environment]
-  VITE_API_URL = "https://your-render-app-name.onrender.com"
+  # Production API URL - Replace with your Railway deployment URL
+  VITE_API_URL = "https://qlib-production.up.railway.app"
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
 
+# Single Page Application routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Security headers for Australian market data
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://qlib-production.up.railway.app https://api.alphavantage.co https://newsapi.org;"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache service worker
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Environment-specific builds
+[context.production]
+  [context.production.environment]
+    VITE_API_URL = "https://qlib-production.up.railway.app"
+    VITE_ENVIRONMENT = "production"
+
+[context.deploy-preview]
+  [context.deploy-preview.environment]  
+    VITE_API_URL = "https://qlib-staging.up.railway.app"
+    VITE_ENVIRONMENT = "staging"
+
+[context.branch-deploy]
+  [context.branch-deploy.environment]
+    VITE_API_URL = "https://qlib-dev.up.railway.app"
+    VITE_ENVIRONMENT = "development"
+
+# Prerender for SEO (Australian market focus)
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+  
+  [plugins.inputs.audits]
+    performance = true
+    accessibility = true
+    best-practices = true
+    seo = true

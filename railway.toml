@@ -1,0 +1,51 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+
+[env]
+# Market Data APIs
+ALPHA_VANTAGE_KEY = "${{ALPHA_VANTAGE_KEY}}"
+NEWS_API_KEY = "${{NEWS_API_KEY}}"
+
+# Supabase Database
+SUPABASE_URL = "${{SUPABASE_URL}}"
+SUPABASE_ANON_KEY = "${{SUPABASE_ANON_KEY}}"
+SUPABASE_SERVICE_KEY = "${{SUPABASE_SERVICE_KEY}}"
+SUPABASE_JWT_SECRET = "${{SUPABASE_JWT_SECRET}}"
+DATABASE_URL = "${{DATABASE_URL}}"
+
+# Two-Factor Authentication (Optional)
+TWILIO_ACCOUNT_SID = "${{TWILIO_ACCOUNT_SID}}"
+TWILIO_AUTH_TOKEN = "${{TWILIO_AUTH_TOKEN}}"
+TWILIO_PHONE_NUMBER = "${{TWILIO_PHONE_NUMBER}}"
+SMTP_USERNAME = "${{SMTP_USERNAME}}"
+SMTP_PASSWORD = "${{SMTP_PASSWORD}}"
+
+# Application Configuration
+FROM_EMAIL = "noreply@qlibpro.com.au"
+PORT = "${{PORT}}"
+PYTHONPATH = "/app"
+ENVIRONMENT = "production"
+TZ = "Australia/Sydney"
+
+# Security
+JWT_SECRET_KEY = "${{JWT_SECRET_KEY}}"
+CORS_ORIGINS = "${{CORS_ORIGINS}}"
+
+# Feature Flags
+ENABLE_SUPABASE = "true"
+ENABLE_2FA = "false"
+ENABLE_PAPER_TRADING = "true"
+
+[variables]
+# Development environment variables
+DEBUG = false
+ENVIRONMENT = "production"
+
+[postgres]
+# Enable PostgreSQL if needed for additional data storage
+enabled = false
