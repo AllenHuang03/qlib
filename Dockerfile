@@ -1,21 +1,23 @@
-# Simple Railway Dockerfile for API
-FROM python:3.9-slim
+# Qlib Pro - Production Dockerfile
+FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy our files
+# Copy requirements first for better caching
 COPY requirements.txt .
-COPY minimal_api.py .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port
-EXPOSE 8000
+# Copy all application files
+COPY main.py .
+COPY supabase_service.py .
+COPY australian_market_service.py .
+COPY auth_service.py .
 
-# Set environment variable
-ENV PORT=8000
+# Expose port (Railway will set PORT env var)
+EXPOSE $PORT
 
-# Run the API
-CMD ["python", "minimal_api.py"]
+# Run the main API
+CMD ["python", "main.py"]

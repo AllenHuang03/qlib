@@ -22,7 +22,9 @@
       "Bash(cp:*)",
       "Bash(mv:*)",
       "Bash(del working_market_api.py market_data_api.py minimal_api.py)",
-      "Bash(del app.py qlib_manager.py qlib_pipeline.py requirements_minimal.txt start_server.bat)"
+      "Bash(del app.py qlib_manager.py qlib_pipeline.py requirements_minimal.txt start_server.bat)",
+      "Bash(fix_railway_deployment.bat)",
+      "Bash(cmd:*)"
     ],
     "deny": []
   }

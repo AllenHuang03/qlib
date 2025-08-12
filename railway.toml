@@ -1,11 +1,16 @@
 [build]
 builder = "nixpacks"
+buildCommand = "pip install -r requirements.txt"
 
 [deploy]
 startCommand = "python main.py"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
+
+[build.env]
+# Force Nixpacks to detect Python correctly
+NIXPACKS_PYTHON_VERSION = "3.10"
 
 [env]
 # Market Data APIs
