@@ -10,11 +10,11 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all application files
-COPY main.py .
-COPY supabase_service.py .
-COPY australian_market_service.py .
-COPY auth_service.py .
+# Copy all Python service files
+COPY *.py .
+
+# Verify files are copied (for debugging)
+RUN ls -la *.py
 
 # Expose port (Railway will set PORT env var)
 EXPOSE $PORT
