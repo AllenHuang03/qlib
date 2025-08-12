@@ -25,20 +25,8 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "https://egbirkjdybtcxlzodclt.supabase.
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnYmlya2pkeWJ0Y3hsem9kY2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2MTYwMTQsImV4cCI6MjA3MDE5MjAxNH0.xT_eUhF7K5cdRGBFlFHHyyJ7SH5g3UIPBbZ2IJj9irc")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnYmlya2pkeWJ0Y3hsem9kY2x0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDYxNjAxNCwiZXhwIjoyMDcwMTkyMDE0fQ.f09V_u4C63yVPxJqRyrujMclxpaLrSFh3iMCnOBc7pg")
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:[YOUR-PASSWORD]@db.egbirkjdybtcxlzodclt.supabase.co:5432/postgres")
-import socket
-
-def find_available_port(start_port=8001, max_port=8100):
-    """Find an available port starting from start_port"""
-    for port in range(start_port, max_port):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('0.0.0.0', port))
-                return port
-        except OSError:
-            continue
-    return None
-
-PORT = find_available_port() or int(os.getenv("PORT", 8099))
+# Railway provides PORT environment variable
+PORT = int(os.getenv("PORT", 8000))
 
 app = FastAPI(
     title="Qlib Pro - Production API", 
