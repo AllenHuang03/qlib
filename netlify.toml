@@ -6,8 +6,8 @@
   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- frontend/"
 
 [build.environment]
-  # Production API URL - Replace with your Railway deployment URL
-  VITE_API_URL = "https://qlib-production.up.railway.app"
+  # Production API URL - Your actual Railway deployment
+  VITE_API_URL = "https://qlib-production-b7f5.up.railway.app"
   NODE_VERSION = "18"
   NPM_VERSION = "9"
 
@@ -25,7 +25,7 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://qlib-production.up.railway.app https://api.alphavantage.co https://newsapi.org;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://qlib-production-b7f5.up.railway.app https://api.alphavantage.co https://newsapi.org;"
 
 # Cache static assets
 [[headers]]
@@ -42,7 +42,7 @@
 # Environment-specific builds
 [context.production]
   [context.production.environment]
-    VITE_API_URL = "https://qlib-production.up.railway.app"
+    VITE_API_URL = "https://qlib-production-b7f5.up.railway.app"
     VITE_ENVIRONMENT = "production"
 
 [context.deploy-preview]
