@@ -43,34 +43,34 @@ const mockPerformanceData = [
   { date: 'Jul', portfolio: 122340, benchmark: 108900, month: 'July' },
 ];
 
-// Real AI opportunities will be loaded from API
+// 🇦🇺 Australian AI opportunities loaded from API
 const defaultOpportunities = [
   {
-    symbol: 'AAPL',
-    name: 'Apple Inc.',
-    signal: 'BUY',
-    confidence: 92,
-    price: '$229.35',
-    change: '+4.24%',
-    reason: 'Loading real market data...',
-  },
-  {
-    symbol: 'MSFT',
-    name: 'Microsoft Corp.',
-    signal: 'BUY', 
-    confidence: 89,
-    price: '$337.20',
-    change: '+1.8%',
-    reason: 'Loading real market data...',
-  },
-  {
-    symbol: 'GOOGL',
-    name: 'Alphabet Inc.',
+    symbol: 'CBA.AX',
+    name: 'Commonwealth Bank',
     signal: 'HOLD',
-    confidence: 76,
-    price: '$134.80',
-    change: '-0.5%',
-    reason: 'Loading real market data...',
+    confidence: 85,
+    price: 'A$110.50',
+    change: '+1.2%',
+    reason: 'Loading Australian market data...',
+  },
+  {
+    symbol: 'BHP.AX',
+    name: 'BHP Group',
+    signal: 'BUY', 
+    confidence: 88,
+    price: 'A$45.20',
+    change: '+2.1%',
+    reason: 'Loading Australian market data...',
+  },
+  {
+    symbol: 'CSL.AX',
+    name: 'CSL Limited',
+    signal: 'BUY',
+    confidence: 91,
+    price: 'A$285.40',
+    change: '+0.8%',
+    reason: 'Loading Australian market data...',
   },
 ];
 
@@ -98,17 +98,17 @@ export default function Dashboard() {
     const loadAISignals = async () => {
       setLoadingSignals(true);
       try {
-        const signals = await aiAPI.getSignals("AAPL,MSFT,GOOGL");
+        const signals = await aiAPI.getSignals("CBA.AX,BHP.AX,CSL.AX");
         
-        // Convert API signals to dashboard format
-        const opportunities = signals.map((signal: any) => ({
-          symbol: signal.symbol,
-          name: getCompanyName(signal.symbol),
-          signal: signal.signal,
-          confidence: Math.round(signal.confidence * 100),
-          price: `$${signal.target_price || 'N/A'}`,
+        // Convert API signals to dashboard format with null safety
+        const opportunities = (signals || []).map((signal: any) => ({
+          symbol: signal?.symbol || 'N/A',
+          name: getCompanyName(signal?.symbol || ''),
+          signal: signal?.signal || 'HOLD',
+          confidence: Math.round((signal?.confidence || 0) * 100),
+          price: `A$${signal?.target_price || 'N/A'}`,
           change: '+0.00%', // Will be updated with real quote data
-          reason: signal.reasoning,
+          reason: signal?.reasoning || 'Loading market analysis...',
         }));
         
         setAiOpportunities(opportunities);
@@ -123,14 +123,23 @@ export default function Dashboard() {
     loadAISignals();
   }, []);
 
-  // Helper function to get company names
-  const getCompanyName = (symbol: string) => {
+  // 🇦🇺 Helper function to get Australian company names with null safety
+  const getCompanyName = (symbol: string | null | undefined) => {
+    if (!symbol || typeof symbol !== 'string') {
+      return 'Unknown Company';
+    }
+    
     const names: { [key: string]: string } = {
-      'AAPL': 'Apple Inc.',
-      'MSFT': 'Microsoft Corp.',
-      'GOOGL': 'Alphabet Inc.',
-      'TSLA': 'Tesla Inc.',
-      'NVDA': 'NVIDIA Corp.',
+      'CBA.AX': 'Commonwealth Bank',
+      'WBC.AX': 'Westpac Banking',
+      'ANZ.AX': 'ANZ Bank',
+      'NAB.AX': 'NAB Bank',
+      'BHP.AX': 'BHP Group',
+      'RIO.AX': 'Rio Tinto',
+      'CSL.AX': 'CSL Limited',
+      'WOW.AX': 'Woolworths',
+      'TLS.AX': 'Telstra',
+      'XRO.AX': 'Xero',
     };
     return names[symbol] || symbol;
   };
