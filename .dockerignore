@@ -1,5 +1,25 @@
-# Ignore everything except our API files
-*
-!minimal_api.py
+# Docker ignore file for Qlib Pro
+.git
+.gitignore
+README.md
+*.md
+.env
+.env.local
+node_modules
+frontend/
+tests/
+docs/
+examples/
+*.log
+__pycache__/
+*.pyc
+*.pyo
+
+# Keep these files for deployment
+!main.py
+!auth_service.py
+!supabase_service.py
+!australian_market_service.py
 !requirements.txt
-!Dockerfile
+!railway.toml
+!nixpacks.toml
