@@ -665,6 +665,108 @@ async def convert_currency(amount: float, from_currency: str = "USD", to_currenc
     except Exception as e:
         return {"error": f"Conversion failed: {str(e)}"}
 
+@app.get("/api/market/indices")
+async def get_asx_indices():
+    """Get Australian stock market indices (ASX 200, All Ordinaries)"""
+    from datetime import datetime, timedelta
+    import numpy as np
+    
+    # Simulate realistic ASX index data
+    # In production, this would come from a proper ASX data feed
+    np.random.seed(int(datetime.now().timestamp()) // 3600)  # Hourly seed
+    
+    # Base values (approximate real values)
+    asx200_base = 8150.0
+    all_ords_base = 8200.0
+    small_ords_base = 3450.0
+    
+    # Generate realistic daily movements
+    asx200_change = np.random.normal(0, 0.8)  # 0.8% std dev
+    all_ords_change = np.random.normal(0, 0.75)
+    small_ords_change = np.random.normal(0, 1.2)  # More volatile
+    
+    asx200_value = round(asx200_base + (asx200_base * asx200_change / 100), 2)
+    all_ords_value = round(all_ords_base + (all_ords_base * all_ords_change / 100), 2)
+    small_ords_value = round(small_ords_base + (small_ords_base * small_ords_change / 100), 2)
+    
+    return {
+        "indices": [
+            {
+                "symbol": "XJO",
+                "name": "S&P/ASX 200",
+                "value": asx200_value,
+                "change": round(asx200_base * asx200_change / 100, 2),
+                "change_percent": round(asx200_change, 2),
+                "description": "Market cap weighted index of 200 largest ASX stocks",
+                "currency": "AUD",
+                "last_updated": datetime.now().isoformat()
+            },
+            {
+                "symbol": "XAO", 
+                "name": "All Ordinaries",
+                "value": all_ords_value,
+                "change": round(all_ords_base * all_ords_change / 100, 2),
+                "change_percent": round(all_ords_change, 2),
+                "description": "Market cap weighted index of ASX equity securities",
+                "currency": "AUD",
+                "last_updated": datetime.now().isoformat()
+            },
+            {
+                "symbol": "XSO",
+                "name": "Small Ordinaries",
+                "value": small_ords_value,
+                "change": round(small_ords_base * small_ords_change / 100, 2), 
+                "change_percent": round(small_ords_change, 2),
+                "description": "Index of smaller ASX companies",
+                "currency": "AUD",
+                "last_updated": datetime.now().isoformat()
+            }
+        ],
+        "market_summary": {
+            "market": "ASX",
+            "status": "LIVE_DATA_SIMULATED",
+            "timestamp": datetime.now().isoformat(),
+            "note": "Index values are simulated - use ASX official feeds for trading"
+        }
+    }
+
+@app.get("/api/market/asx-sectors")
+async def get_asx_sectors():
+    """Get ASX sector performance and breakdown"""
+    # Major ASX sectors with realistic weights and performance
+    sectors = {
+        "Financials": {"weight": 28.5, "performance": np.random.normal(0.2, 0.8)},
+        "Materials": {"weight": 18.2, "performance": np.random.normal(-0.1, 1.2)}, 
+        "Healthcare": {"weight": 11.8, "performance": np.random.normal(0.5, 0.9)},
+        "Consumer Discretionary": {"weight": 9.3, "performance": np.random.normal(0.3, 1.0)},
+        "Real Estate": {"weight": 7.1, "performance": np.random.normal(-0.2, 0.7)},
+        "Industrials": {"weight": 6.8, "performance": np.random.normal(0.1, 0.8)},
+        "Communication Services": {"weight": 4.2, "performance": np.random.normal(0.4, 1.1)},
+        "Consumer Staples": {"weight": 3.9, "performance": np.random.normal(0.0, 0.6)},
+        "Energy": {"weight": 3.7, "performance": np.random.normal(-0.3, 1.5)},
+        "Information Technology": {"weight": 3.1, "performance": np.random.normal(0.8, 1.8)},
+        "Utilities": {"weight": 2.4, "performance": np.random.normal(0.1, 0.5)}
+    }
+    
+    sector_data = []
+    for sector, data in sectors.items():
+        sector_data.append({
+            "sector": sector,
+            "weight_percent": data["weight"],
+            "performance_percent": round(data["performance"], 2),
+            "status": "positive" if data["performance"] > 0 else "negative"
+        })
+    
+    # Sort by performance
+    sector_data.sort(key=lambda x: x["performance_percent"], reverse=True)
+    
+    return {
+        "sectors": sector_data,
+        "market": "ASX",
+        "timestamp": datetime.now().isoformat(),
+        "note": "Sector data simulated based on historical ASX composition"
+    }
+
 @app.get("/api/market/news")
 async def get_market_news(query: str = "ASX Australian stock market", limit: int = 10):
     """Get Australian financial news"""
