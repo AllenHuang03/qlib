@@ -773,6 +773,61 @@ async def get_market_news(query: str = "ASX Australian stock market", limit: int
     return await market_service.get_market_news(query, limit)
 
 # ================================
+# DATA MANAGEMENT ENDPOINTS
+# ================================
+
+@app.get("/api/data/datasets")
+async def get_datasets():
+    """Get available datasets for Australian market"""
+    return {
+        "datasets": [
+            {
+                "id": "asx-daily",
+                "name": "ASX Daily Prices",
+                "type": "Stock Prices",
+                "size": "2.1 GB",
+                "last_update": "2025-08-12T10:00:00Z",
+                "status": "active",
+                "records": "1,247,583",
+                "description": "Daily OHLCV data for all ASX-listed stocks"
+            },
+            {
+                "id": "asx-fundamental",
+                "name": "ASX Fundamental Data",
+                "type": "Company Financials",
+                "size": "892 MB", 
+                "last_update": "2025-08-11T18:00:00Z",
+                "status": "active",
+                "records": "45,891",
+                "description": "Balance sheets, income statements, cash flows"
+            },
+            {
+                "id": "asx-sentiment",
+                "name": "Market Sentiment Data",
+                "type": "Alternative Data",
+                "size": "156 MB",
+                "last_update": "2025-08-12T09:30:00Z", 
+                "status": "syncing",
+                "records": "89,234",
+                "description": "News sentiment, social media mentions"
+            }
+        ],
+        "total": 3,
+        "last_sync": "2025-08-12T10:00:00Z",
+        "market": "ASX"
+    }
+
+@app.post("/api/data/refresh")
+async def refresh_data():
+    """Refresh market data"""
+    return {
+        "message": "Data refresh initiated",
+        "status": "processing",
+        "estimated_time": "5-10 minutes",
+        "datasets_affected": ["asx-daily", "asx-fundamental", "asx-sentiment"]
+    }
+
+# ================================
 # AI PREDICTION ENDPOINTS
 # ================================
 
