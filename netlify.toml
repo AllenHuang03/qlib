@@ -10,6 +10,8 @@
   VITE_API_URL = "https://qlib-production-b7f5.up.railway.app"
   NODE_VERSION = "18"
   NPM_VERSION = "9"
+  # Force fresh build - Cache buster
+  BUILD_TIMESTAMP = "2025-08-12-v2"
 
 # Single Page Application routing
 [[redirects]]

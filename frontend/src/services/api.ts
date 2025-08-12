@@ -4,6 +4,15 @@ import axios, { AxiosResponse } from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const USE_MOCK_MODE = !API_BASE_URL;
 
+// Debug logging for troubleshooting
+console.log('🔍 API Configuration Debug:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  API_BASE_URL,
+  USE_MOCK_MODE,
+  NODE_ENV: import.meta.env.NODE_ENV,
+  timestamp: new Date().toISOString()
+});
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL ? `${API_BASE_URL}/api` : '/api',
@@ -17,7 +26,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth-token');
-    if (token) {
+    if (token && token !== 'null' && token.trim() !== '') {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -61,10 +70,15 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth-token');
-      window.location.href = '/login';
+      // Only redirect to login if not already on login/register pages
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+        localStorage.removeItem('auth-token');
+        console.log('🔐 Auth token expired, redirecting to login');
+        window.location.href = '/login';
+      }
     } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
-      console.error('Backend server is not running. Please start the backend server.');
+      console.error('🔌 Backend server connection failed');
     }
     console.error('API Error:', error);
     return Promise.reject(error);
