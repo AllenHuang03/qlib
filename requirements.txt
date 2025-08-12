@@ -1,22 +1,12 @@
-# Qlib Pro Production API Requirements
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-httpx==0.25.2
-pydantic==2.5.0
-python-multipart==0.0.6
-numpy==1.24.3
-python-dotenv==1.0.0
+# Qlib Pro - Minimal Production Requirements for Railway
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+httpx>=0.25.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
 
 # Supabase integration
-supabase==2.3.4
+supabase>=2.0.0
 
-# 2FA Authentication
-pyotp==2.9.0
-qrcode==7.4.2
-Pillow==10.2.0
-
-# Email support
-email-validator==2.1.0
-
-# Optional: pandas for data processing
-pandas==2.1.4
+# Authentication
+pyotp>=2.9.0
