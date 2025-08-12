@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-CONSOLIDATED PRODUCTION API
-Combines all features from multiple API files into single source of truth
+QLIB PRO - PRODUCTION API
+Australian Trading Platform - Single Source of Truth
 Features: Real market data, AI signals, user authentication, Supabase integration
 """
 import os
@@ -709,7 +709,7 @@ if __name__ == "__main__":
     print(f"Users: {len(USERS_DB)} registered")
     
     uvicorn.run(
-        "production_api:app", 
+        "main:app", 
         host="0.0.0.0", 
         port=PORT, 
         log_level="info",
