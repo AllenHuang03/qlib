@@ -177,20 +177,7 @@ export default function Dashboard() {
   ];
 
   const handleSwitchToReal = () => {
-    // Real implementation would redirect to funding/verification flow
-    const confirmed = window.confirm(
-      'Switching to real money trading requires:\n\n' +
-      '• Account verification\n' +
-      '• Minimum deposit of $1,000\n' +
-      '• Risk acknowledgment\n\n' +
-      'Would you like to proceed to the funding page?'
-    );
-    
-    if (confirmed) {
-      // Navigate to funding page (implement routing)
-      console.log('Navigating to funding page...');
-      alert('Redirecting to account funding and verification...');
-    }
+    navigate('/upgrade');
   };
 
   const handleViewOpportunity = (symbol: string) => {

@@ -14,6 +14,7 @@ import Register from './pages/Auth/Register';
 import Landing from './pages/Landing/Landing';
 import Community from './pages/Community/Community';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import Upgrade from './pages/Upgrade/Upgrade';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -61,6 +62,7 @@ function App() {
           <Route path="/data" element={<DataManagement />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/upgrade" element={<Upgrade />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Layout>

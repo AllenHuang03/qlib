@@ -112,6 +112,43 @@ export default function DataManagement() {
     }
   };
 
+  const handleDownload = (dataset: Dataset) => {
+    // Create a mock CSV content
+    const csvContent = `Date,Symbol,Price,Volume\n2024-01-15,CBA.AX,110.50,1250000\n2024-01-15,BHP.AX,45.20,2100000\n2024-01-15,CSL.AX,285.40,850000`;
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${dataset.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    alert(`Downloaded ${dataset.name} dataset!\n\nFile contains: ${dataset.records} records\nSize: ${dataset.size}\nFormat: CSV with Date, Symbol, Price, Volume columns`);
+  };
+
+  const handleRefreshDataset = async (dataset: Dataset) => {
+    try {
+      // Simulate refreshing individual dataset
+      const updatedDataset = {
+        ...dataset,
+        last_update: new Date().toISOString(),
+        records: (parseInt(dataset.records.replace(/,/g, '')) + Math.floor(Math.random() * 1000)).toLocaleString()
+      };
+      
+      setDatasets(prev => prev.map(d => d.id === dataset.id ? updatedDataset : d));
+      alert(`${dataset.name} refreshed successfully!\n\nNew records: ${updatedDataset.records}\nLast update: ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+      console.error('Error refreshing dataset:', error);
+      alert(`Failed to refresh ${dataset.name}. Please try again.`);
+    }
+  };
+
   const handleRefreshData = async () => {
     try {
       setRefreshing(true);
@@ -327,10 +364,20 @@ export default function DataManagement() {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton size="small" color="primary">
+                      <IconButton 
+                        size="small" 
+                        color="primary"
+                        onClick={() => handleDownload(dataset)}
+                        title={`Download ${dataset.name} dataset`}
+                      >
                         <Download />
                       </IconButton>
-                      <IconButton size="small" color="primary">
+                      <IconButton 
+                        size="small" 
+                        color="primary"
+                        onClick={() => handleRefreshDataset(dataset)}
+                        title={`Refresh ${dataset.name} with latest data`}
+                      >
                         <Refresh />
                       </IconButton>
                     </TableCell>

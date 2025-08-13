@@ -16,7 +16,7 @@ import {
   Tabs,
   Tab,
 } from '@mui/material';
-import { TrendingUp, TrendingDown, Refresh } from '@mui/icons-material';
+import { TrendingUp, TrendingDown, Refresh, AccountBalance, CloudUpload, Visibility, Security, TrendingUp as GrowthIcon } from '@mui/icons-material';
 import { portfolioAPI, marketAPI } from '../../services/api';
 import { CircularProgress, Snackbar, Alert } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -128,7 +128,9 @@ const sectorData = [
 
 export default function Portfolio() {
   const [tabValue, setTabValue] = useState(0);
-  const [holdings, setHoldings] = useState(mockHoldings);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [hasConnectedData, setHasConnectedData] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
@@ -199,10 +201,60 @@ export default function Portfolio() {
     }
   };
 
-  // Auto-refresh portfolio on component mount
+  // Check if user has connected data on component mount
   useEffect(() => {
-    handleRefreshPortfolio();
+    // In real app, check if user has connected broker accounts
+    const hasData = localStorage.getItem('portfolio_connected') === 'true';
+    setHasConnectedData(hasData);
+    setShowOnboarding(!hasData);
+    
+    if (hasData) {
+      handleRefreshPortfolio();
+    }
   }, []);
+
+  const handleConnectBroker = (broker: string) => {
+    setLoading(true);
+    // Simulate broker connection
+    setTimeout(() => {
+      localStorage.setItem('portfolio_connected', 'true');
+      setHasConnectedData(true);
+      setShowOnboarding(false);
+      setHoldings(mockHoldings); // In real app, this would be real data
+      setSnackbar({ open: true, message: `Successfully connected to ${broker}!`, severity: 'success' });
+      setLoading(false);
+    }, 2000);
+  };
+
+  const handleUploadCSV = () => {
+    // Create file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        setLoading(true);
+        // Simulate CSV processing
+        setTimeout(() => {
+          localStorage.setItem('portfolio_connected', 'true');
+          setHasConnectedData(true);
+          setShowOnboarding(false);
+          setHoldings(mockHoldings);
+          setSnackbar({ open: true, message: 'Portfolio imported successfully!', severity: 'success' });
+          setLoading(false);
+        }, 1500);
+      }
+    };
+    input.click();
+  };
+
+  const handleDemoMode = () => {
+    setHasConnectedData(true);
+    setShowOnboarding(false);
+    setHoldings(mockHoldings);
+    setSnackbar({ open: true, message: 'Viewing demo portfolio - connect real data for personalized insights', severity: 'info' });
+  };
 
   return (
     <Box>

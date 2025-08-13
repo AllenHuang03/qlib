@@ -359,6 +359,11 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ open, onClose, stock 
           variant="contained" 
           sx={{ bgcolor: '#4CAF50', '&:hover': { bgcolor: '#45a049' } }}
           startIcon={<CheckCircle />}
+          onClick={() => {
+            // Simulate adding to watchlist or making trade
+            alert(`Added ${stock.symbol} to your watchlist!\n\nNext steps:\n• AI will monitor this stock\n• You'll get alerts for optimal entry points\n• Upgrade to Pro to enable automatic trading`);
+            onClose();
+          }}
         >
           I Understand, Proceed
         </Button>

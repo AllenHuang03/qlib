@@ -33,6 +33,8 @@ import {
   Assessment,
   Timeline,
   Refresh,
+  HelpOutline,
+  MonetizationOn,
 } from '@mui/icons-material';
 import { modelsAPI, Model } from '../../services/api';
 
