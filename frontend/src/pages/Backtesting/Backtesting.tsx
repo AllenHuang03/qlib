@@ -103,6 +103,7 @@ const performanceData = [
 export default function Backtesting() {
   const [tabValue, setTabValue] = useState(0);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [backtestResults, setBacktestResults] = useState<BacktestResult[]>(mockResults);
   const [newBacktest, setNewBacktest] = useState({
     name: '',
     model: '',
@@ -133,23 +134,24 @@ export default function Backtesting() {
     console.log('Creating backtest:', newBacktest);
     
     // Create new backtest entry
-    const newBacktestEntry = {
-      id: (mockResults.length + 1).toString(),
+    const newBacktestEntry: BacktestResult = {
+      id: (backtestResults.length + 1).toString(),
       name: newBacktest.name || 'New Backtest',
       model: newBacktest.model,
       startDate: newBacktest.startDate?.toISOString().split('T')[0] || '2024-01-01',
       endDate: newBacktest.endDate?.toISOString().split('T')[0] || '2024-12-31',
-      returns: Math.random() * 20 - 5, // Random returns between -5% and 15%
-      sharpe: Math.random() * 2 + 0.5, // Random sharpe between 0.5 and 2.5
-      maxDrawdown: -(Math.random() * 10 + 2), // Random drawdown between -2% and -12%
-      volatility: Math.random() * 15 + 8, // Random volatility between 8% and 23%
-      winRate: Math.random() * 30 + 55, // Random win rate between 55% and 85%
+      returns: Math.round((Math.random() * 20 - 5) * 10) / 10, // Random returns between -5% and 15%
+      sharpe: Math.round((Math.random() * 2 + 0.5) * 100) / 100, // Random sharpe between 0.5 and 2.5
+      maxDrawdown: Math.round(-(Math.random() * 10 + 2) * 10) / 10, // Random drawdown between -2% and -12%
       status: 'running' as const,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString().split('T')[0],
     };
     
-    console.log('New backtest would be created:', newBacktestEntry);
-    alert(`Backtest "${newBacktest.name}" started successfully!\nModel: ${newBacktest.model}\nPeriod: ${newBacktest.startDate?.toDateString()} to ${newBacktest.endDate?.toDateString()}\n(Check console for details)`);
+    // Add to the results list
+    setBacktestResults(prev => [newBacktestEntry, ...prev]);
+    
+    console.log('New backtest created:', newBacktestEntry);
+    alert(`Backtest "${newBacktest.name}" started successfully!\n\nModel: ${newBacktest.model}\nPeriod: ${newBacktest.startDate?.toDateString()} to ${newBacktest.endDate?.toDateString()}\nStatus: Running\n\nCheck the Results tab to monitor progress.`);
     
     setCreateDialogOpen(false);
     setNewBacktest({
@@ -216,7 +218,7 @@ export default function Backtesting() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {mockResults.map((result) => (
+                    {backtestResults.map((result) => (
                       <TableRow key={result.id} hover sx={{ cursor: 'pointer' }} onClick={() => handleBacktestClick(result)}>
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">

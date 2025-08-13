@@ -27,7 +27,9 @@
       "Bash(cmd:*)",
       "Bash(gh:*)",
       "Bash(railway --version)",
-      "WebFetch(domain:qlib-production-b7f5.up.railway.app)"
+      "WebFetch(domain:qlib-production-b7f5.up.railway.app)",
+      "Bash(git reset:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

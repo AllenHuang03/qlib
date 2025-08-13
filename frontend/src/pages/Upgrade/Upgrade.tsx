@@ -30,6 +30,8 @@ import {
   Phone,
   Email,
   CreditCard,
+  CloudUpload,
+  Description,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -125,13 +127,36 @@ export default function Upgrade() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleGetBankDetails = () => {
+    alert(`Bank Transfer Details:\n\nBank: Commonwealth Bank of Australia\nAccount Name: Qlib Pro Trading Pty Ltd\nBSB: 062-001\nAccount Number: 1234 5678\nReference: ${formData.fullName || 'Your Name'} - ${selectedPlan}\n\nIMPORTANT:\n• Include reference exactly as shown\n• Minimum deposit: $1,000 AUD\n• Funds typically clear within 1-2 business days\n• Email confirmation will be sent once deposit is verified`);
+  };
+
+  const handleCardPayment = () => {
+    alert(`Card Payment:\n\nProcessing fee: 1.5% of deposit amount\nMinimum: $1,000 AUD + $15 fee = $1,015 total\n\nAccepted cards:\n• Visa\n• Mastercard\n• American Express (3% fee)\n\nFunds are available immediately after payment.\n\n[In production, this would open Stripe/payment gateway]`);
+  };
+
+  const handleIDUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.jpg,.jpeg,.png';
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files && files.length > 0) {
+        const fileNames = Array.from(files).map(f => f.name).join(', ');
+        alert(`ID Documents Uploaded:\n\n${fileNames}\n\nVerification typically takes 1-2 business days.\nYou'll receive email confirmation once approved.`);
+      }
+    };
+    input.click();
+  };
+
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, sm: 3 } }}>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="h3" fontWeight="bold" sx={{ mb: 2 }}>
+        <Typography variant={{ xs: 'h4', sm: 'h3' }} fontWeight="bold" sx={{ mb: 2 }}>
           Upgrade to Unlock AI Trading
         </Typography>
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant={{ xs: 'body1', sm: 'h6' }} color="text.secondary">
           Join thousands of Australian investors earning superior returns with AI
         </Typography>
       </Box>
@@ -243,8 +268,8 @@ export default function Upgrade() {
       )}
 
       {activeStep === 1 && (
-        <Card sx={{ maxWidth: 600, mx: 'auto' }}>
-          <CardContent sx={{ p: 4 }}>
+        <Card sx={{ maxWidth: 800, mx: 'auto' }}>
+          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
             <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
               Account Verification
             </Typography>
@@ -309,6 +334,66 @@ export default function Upgrade() {
                   </Select>
                 </FormControl>
               </Grid>
+              
+              <Grid item xs={12}>
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, mt: 3 }}>
+                  Identity Verification Documents
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Please upload one of the following government-issued photo ID:
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<Description />}
+                      onClick={handleIDUpload}
+                      sx={{ py: 2, borderStyle: 'dashed' }}
+                    >
+                      Australian Driver's License
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<Description />}
+                      onClick={handleIDUpload}
+                      sx={{ py: 2, borderStyle: 'dashed' }}
+                    >
+                      Australian Passport
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<Description />}
+                      onClick={handleIDUpload}
+                      sx={{ py: 2, borderStyle: 'dashed' }}
+                    >
+                      Medicare Card
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<CloudUpload />}
+                      onClick={handleIDUpload}
+                      sx={{ py: 2, borderStyle: 'dashed' }}
+                    >
+                      Other ID Document
+                    </Button>
+                  </Grid>
+                </Grid>
+                
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Accepted formats: PDF, JPG, PNG • Max file size: 10MB • Both sides required for licenses
+                </Typography>
+              </Grid>
             </Grid>
 
             <Alert severity="info" sx={{ mt: 3 }}>
@@ -335,8 +420,8 @@ export default function Upgrade() {
       )}
 
       {activeStep === 2 && (
-        <Card sx={{ maxWidth: 600, mx: 'auto' }}>
-          <CardContent sx={{ p: 4 }}>
+        <Card sx={{ maxWidth: 700, mx: 'auto' }}>
+          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
             <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
               Fund Your Account
             </Typography>
@@ -357,7 +442,7 @@ export default function Upgrade() {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Free • 1-2 business days • Most secure
                   </Typography>
-                  <Button variant="outlined" fullWidth>
+                  <Button variant="outlined" fullWidth onClick={handleGetBankDetails}>
                     Get Bank Details
                   </Button>
                 </Card>
@@ -372,7 +457,7 @@ export default function Upgrade() {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     1.5% fee • Instant • Visa/Mastercard accepted
                   </Typography>
-                  <Button variant="outlined" fullWidth>
+                  <Button variant="outlined" fullWidth onClick={handleCardPayment}>
                     Pay with Card
                   </Button>
                 </Card>
