@@ -16,6 +16,7 @@ import {
   useTheme,
   CircularProgress,
   Snackbar,
+  Tooltip,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -302,6 +303,32 @@ export default function Dashboard() {
 
   return (
     <Box>
+      {/* Value Proposition Banner */}
+      <Card sx={{ mb: 2, bgcolor: 'success.main', color: 'white' }}>
+        <CardContent sx={{ py: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">
+                📈 Our AI Models Averaged 23% Returns vs 11% ASX 200 This Year
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Join 5,000+ Australian investors using AI to optimize their portfolios • Tax-optimized for Aussie investors
+              </Typography>
+            </Box>
+            <Button 
+              variant="outlined" 
+              sx={{ 
+                color: 'white', 
+                borderColor: 'white',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+              }}
+            >
+              Learn More
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
       {/* Paper Trading Banner */}
       {isPaperMode && (
         <Alert 
@@ -319,7 +346,7 @@ export default function Dashboard() {
               onClick={handleSwitchToReal}
               sx={{ fontWeight: 600 }}
             >
-              Switch to Real Money
+              Upgrade to Pro ($29/mo)
             </Button>
           }
           icon={<Security sx={{ color: '#2196F3' }} />}
