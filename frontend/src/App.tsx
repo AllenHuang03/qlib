@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box } from '@mui/material';
 
@@ -18,8 +18,13 @@ import Upgrade from './pages/Upgrade/Upgrade';
 import { useAuthStore } from './store/authStore';
 
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, initializeAuth } = useAuthStore();
   const location = useLocation();
+
+  // Initialize authentication on app startup
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   // Public routes that don't require authentication
   const publicRoutes = ['/', '/landing', '/register', '/login'];

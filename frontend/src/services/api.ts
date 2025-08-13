@@ -273,8 +273,10 @@ export const modelsAPI = {
       MOCK_MODELS.push(newModel);
       return newModel;
     }
-    const response: AxiosResponse<Model> = await api.post('/models', modelData);
-    return response.data;
+    const response: AxiosResponse<any> = await api.post('/models', modelData);
+    // Backend returns {message, model, status, estimated_completion}
+    // Extract the model object from the response
+    return response.data.model || response.data;
   },
 
   getModel: async (id: string): Promise<Model> => {
