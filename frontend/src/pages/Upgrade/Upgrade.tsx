@@ -98,11 +98,13 @@ export default function Upgrade() {
   const [selectedPlan, setSelectedPlan] = useState('Pro');
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     phone: '',
     occupation: '',
     investmentExperience: '',
     riskTolerance: '',
   });
+  const [processing, setProcessing] = useState(false);
 
   const handlePlanSelect = (planName: string) => {
     setSelectedPlan(planName);
@@ -131,8 +133,55 @@ export default function Upgrade() {
     alert(`Bank Transfer Details:\n\nBank: Commonwealth Bank of Australia\nAccount Name: Qlib Pro Trading Pty Ltd\nBSB: 062-001\nAccount Number: 1234 5678\nReference: ${formData.fullName || 'Your Name'} - ${selectedPlan}\n\nIMPORTANT:\n• Include reference exactly as shown\n• Minimum deposit: $1,000 AUD\n• Funds typically clear within 1-2 business days\n• Email confirmation will be sent once deposit is verified`);
   };
 
-  const handleCardPayment = () => {
-    alert(`Card Payment:\n\nProcessing fee: 1.5% of deposit amount\nMinimum: $1,000 AUD + $15 fee = $1,015 total\n\nAccepted cards:\n• Visa\n• Mastercard\n• American Express (3% fee)\n\nFunds are available immediately after payment.\n\n[In production, this would open Stripe/payment gateway]`);
+  const handleCardPayment = async () => {
+    if (!formData.fullName || !formData.email) {
+      alert('Please fill in your name and email first');
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      
+      // Create payment intent
+      const response = await fetch('/api/payment/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+        },
+        body: JSON.stringify({
+          tier: selectedPlan.toLowerCase(),
+          currency: 'aud',
+          customer_email: formData.email
+        })
+      });
+
+      if (response.ok) {
+        const paymentIntent = await response.json();
+        
+        if (paymentIntent.mock) {
+          // Mock payment success
+          setTimeout(() => {
+            alert(`✅ Payment Successful!\n\nPayment ID: ${paymentIntent.payment_intent_id}\nAmount: $${(paymentIntent.amount / 100).toFixed(2)} ${paymentIntent.currency.toUpperCase()}\n\nWelcome to Qlib ${selectedPlan}!\nYour account has been upgraded.`);
+            setProcessing(false);
+            
+            // Update local storage and navigate to dashboard
+            localStorage.setItem('subscription_tier', selectedPlan.toLowerCase());
+            navigate('/dashboard?upgraded=true');
+          }, 2000);
+        } else {
+          // Real Stripe integration would open here
+          alert(`Stripe Payment:\n\nPayment Intent: ${paymentIntent.client_secret}\nAmount: $${(paymentIntent.amount / 100).toFixed(2)} ${paymentIntent.currency.toUpperCase()}\n\n[In production, this would open Stripe payment form]`);
+          setProcessing(false);
+        }
+      } else {
+        throw new Error('Failed to create payment intent');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Payment failed. Please try again.');
+      setProcessing(false);
+    }
   };
 
   const handleIDUpload = () => {
@@ -284,6 +333,17 @@ export default function Upgrade() {
                   label="Full Name"
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Email Address"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="your.email@example.com"
                   required
                 />
               </Grid>
@@ -457,8 +517,13 @@ export default function Upgrade() {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     1.5% fee • Instant • Visa/Mastercard accepted
                   </Typography>
-                  <Button variant="outlined" fullWidth onClick={handleCardPayment}>
-                    Pay with Card
+                  <Button 
+                    variant="outlined" 
+                    fullWidth 
+                    onClick={handleCardPayment}
+                    disabled={processing}
+                  >
+                    {processing ? 'Processing...' : 'Pay with Card'}
                   </Button>
                 </Card>
               </Grid>

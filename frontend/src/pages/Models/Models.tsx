@@ -35,8 +35,11 @@ import {
   Refresh,
   HelpOutline,
   MonetizationOn,
+  Speed,
 } from '@mui/icons-material';
 import { modelsAPI, Model } from '../../services/api';
+import TrainingProgressModal from '../../components/TrainingProgress/TrainingProgressModal';
+import ModelEditorModal from '../../components/ModelEditor/ModelEditorModal';
 
 interface CreateModelForm {
   name: string;
@@ -53,6 +56,9 @@ export function Models() {
   const [creating, setCreating] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
+  const [trainingProgressOpen, setTrainingProgressOpen] = useState(false);
+  const [modelEditorOpen, setModelEditorOpen] = useState(false);
+  const [editingModel, setEditingModel] = useState<Model | null>(null);
   const [newModel, setNewModel] = useState<CreateModelForm>({
     name: '',
     type: '',
@@ -229,7 +235,8 @@ export function Models() {
           setError('Failed to get model predictions.');
         }
       } else if (action === 'Edit') {
-        alert(`Edit Model: ${selectedModel.name}\n\nEdit panel would open with:\n• Model parameters\n• Training configuration\n• Feature selection\n• Performance tuning`);
+        setEditingModel(selectedModel);
+        setModelEditorOpen(true);
       } else if (action === 'Duplicate') {
         try {
           const response = await fetch(`/api/models/${selectedModel.id}/duplicate`, {
@@ -275,6 +282,36 @@ export function Models() {
     }
   };
 
+  const handleModelSave = async (model: Model, config: any) => {
+    try {
+      const response = await fetch(`/api/models/${model.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: model.name,
+          description: model.description,
+          configuration: config
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Model updated:', result.message);
+        await fetchModels(); // Refresh models list
+        setModelEditorOpen(false);
+        setEditingModel(null);
+      } else {
+        setError('Failed to update model configuration');
+      }
+    } catch (err) {
+      console.error('Error updating model:', err);
+      setError('Failed to update model configuration');
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -290,6 +327,13 @@ export function Models() {
           Models ({models.length})
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Speed />}
+            onClick={() => setTrainingProgressOpen(true)}
+          >
+            Training Progress
+          </Button>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
@@ -512,6 +556,23 @@ export function Models() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Training Progress Modal */}
+      <TrainingProgressModal 
+        open={trainingProgressOpen}
+        onClose={() => setTrainingProgressOpen(false)}
+      />
+
+      {/* Model Editor Modal */}
+      <ModelEditorModal
+        open={modelEditorOpen}
+        onClose={() => {
+          setModelEditorOpen(false);
+          setEditingModel(null);
+        }}
+        model={editingModel}
+        onSave={handleModelSave}
+      />
     </Box>
   );
 }

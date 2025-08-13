@@ -4,9 +4,9 @@ Qlib Pro Production API
 Comprehensive backend API for the Qlib Pro trading platform
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import uvicorn
@@ -15,6 +15,7 @@ import datetime
 import random
 import os
 import requests
+import io
 from contextlib import asynccontextmanager
 
 # Import Qlib service
@@ -24,6 +25,30 @@ try:
 except ImportError:
     print("Qlib service not available, using fallback")
     QLIB_SERVICE_AVAILABLE = False
+
+# Import WebSocket manager
+try:
+    from websocket_manager import websocket_manager
+    WEBSOCKET_AVAILABLE = True
+except ImportError:
+    print("WebSocket manager not available")
+    WEBSOCKET_AVAILABLE = False
+
+# Import Payment service
+try:
+    from payment_service import payment_service
+    PAYMENT_SERVICE_AVAILABLE = True
+except ImportError:
+    print("Payment service not available")
+    PAYMENT_SERVICE_AVAILABLE = False
+
+# Import Cloud Storage service
+try:
+    from cloud_storage_service import cloud_storage_service
+    STORAGE_SERVICE_AVAILABLE = True
+except ImportError:
+    print("Cloud storage service not available")
+    STORAGE_SERVICE_AVAILABLE = False
 
 # Data Models
 class Model(BaseModel):
@@ -41,6 +66,16 @@ class CreateModelRequest(BaseModel):
     name: str
     type: str
     description: str
+
+class PaymentIntentRequest(BaseModel):
+    tier: str
+    currency: str = 'aud'
+    customer_email: str
+
+class SubscriptionRequest(BaseModel):
+    tier: str
+    customer_email: str
+    payment_method_id: Optional[str] = None
 
 class Signal(BaseModel):
     symbol: str
@@ -174,6 +209,47 @@ async def health():
         }
     }
 
+# WebSocket endpoints
+@app.websocket("/ws/training")
+async def websocket_training(websocket: WebSocket):
+    """WebSocket endpoint for model training updates"""
+    if WEBSOCKET_AVAILABLE:
+        await websocket_manager.connect(websocket, 'training')
+        try:
+            while True:
+                # Keep connection alive and handle any incoming messages
+                await websocket.receive_text()
+        except WebSocketDisconnect:
+            await websocket_manager.disconnect(websocket, 'training')
+    else:
+        await websocket.close()
+
+@app.websocket("/ws/market")
+async def websocket_market(websocket: WebSocket):
+    """WebSocket endpoint for market data updates"""
+    if WEBSOCKET_AVAILABLE:
+        await websocket_manager.connect(websocket, 'market')
+        try:
+            while True:
+                await websocket.receive_text()
+        except WebSocketDisconnect:
+            await websocket_manager.disconnect(websocket, 'market')
+    else:
+        await websocket.close()
+
+@app.websocket("/ws/system")
+async def websocket_system(websocket: WebSocket):
+    """WebSocket endpoint for system notifications"""
+    if WEBSOCKET_AVAILABLE:
+        await websocket_manager.connect(websocket, 'system')
+        try:
+            while True:
+                await websocket.receive_text()
+        except WebSocketDisconnect:
+            await websocket_manager.disconnect(websocket, 'system')
+    else:
+        await websocket.close()
+
 # Models API
 @app.get("/api/models", response_model=List[Model])
 async def get_models():
@@ -200,6 +276,14 @@ async def create_model(model_data: CreateModelRequest):
                 model_type=model_data.type, 
                 description=model_data.description
             )
+            
+            # Start WebSocket training updates
+            if WEBSOCKET_AVAILABLE:
+                websocket_manager.start_model_training(
+                    new_model_data['id'], 
+                    new_model_data['name']
+                )
+            
             return {
                 "message": f"Model '{model_data.name}' created successfully",
                 "model": new_model_data,
@@ -581,6 +665,270 @@ async def global_exception_handler(request: Request, exc: Exception):
             "timestamp": datetime.datetime.now().isoformat()
         }
     )
+
+# Payment API
+@app.get("/api/payment/pricing")
+async def get_pricing_tiers():
+    """Get available pricing tiers"""
+    if PAYMENT_SERVICE_AVAILABLE:
+        return payment_service.get_pricing_tiers()
+    
+    # Fallback pricing
+    return {
+        'pro': {
+            'name': 'Qlib Pro',
+            'price_aud': 2900,
+            'price_usd': 1999,
+            'features': [
+                'Advanced AI Models',
+                'Real-time Trading Signals',
+                'Portfolio Management',
+                'Basic Backtesting',
+                'Email Support'
+            ]
+        },
+        'premium': {
+            'name': 'Qlib Premium',
+            'price_aud': 9900,
+            'price_usd': 6999,
+            'features': [
+                'All Pro Features',
+                'Custom Model Training',
+                'Advanced Backtesting',
+                'API Access',
+                'Priority Support',
+                'White-label Options'
+            ]
+        }
+    }
+
+@app.post("/api/payment/create-payment-intent")
+async def create_payment_intent(payment_request: PaymentIntentRequest):
+    """Create a Stripe Payment Intent"""
+    if not PAYMENT_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Payment service unavailable")
+    
+    try:
+        # Get tier pricing
+        tiers = payment_service.get_pricing_tiers()
+        tier_info = tiers.get(payment_request.tier)
+        
+        if not tier_info:
+            raise HTTPException(status_code=400, detail="Invalid subscription tier")
+        
+        # Determine amount based on currency
+        amount = tier_info['price_aud'] if payment_request.currency.lower() == 'aud' else tier_info['price_usd']
+        
+        # Create payment intent
+        result = payment_service.create_payment_intent(
+            amount=amount,
+            currency=payment_request.currency,
+            customer_email=payment_request.customer_email,
+            metadata={'tier': payment_request.tier}
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/payment/confirm-payment/{payment_intent_id}")
+async def confirm_payment(payment_intent_id: str):
+    """Confirm a payment and activate subscription"""
+    if not PAYMENT_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Payment service unavailable")
+    
+    try:
+        # Confirm payment
+        result = payment_service.confirm_payment(payment_intent_id)
+        
+        if result['success']:
+            # In real app, update user subscription in database
+            return {
+                'success': True,
+                'message': 'Payment confirmed and subscription activated',
+                'subscription_tier': result.get('metadata', {}).get('tier', 'pro'),
+                'amount': result['amount_received'],
+                'currency': result['currency']
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'Payment not confirmed',
+                'status': result['status']
+            }
+            
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/payment/create-subscription")
+async def create_subscription(subscription_request: SubscriptionRequest):
+    """Create a recurring subscription"""
+    if not PAYMENT_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Payment service unavailable")
+    
+    try:
+        result = payment_service.create_subscription(
+            customer_email=subscription_request.customer_email,
+            tier=subscription_request.tier,
+            payment_method_id=subscription_request.payment_method_id
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/payment/subscriptions/{customer_email}")
+async def get_customer_subscriptions(customer_email: str):
+    """Get customer's subscriptions"""
+    if not PAYMENT_SERVICE_AVAILABLE:
+        return {'subscriptions': [], 'total': 0, 'mock': True}
+    
+    try:
+        return payment_service.get_customer_subscriptions(customer_email)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/payment/subscription/{subscription_id}")
+async def cancel_subscription(subscription_id: str):
+    """Cancel a subscription"""
+    if not PAYMENT_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Payment service unavailable")
+    
+    try:
+        return payment_service.cancel_subscription(subscription_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/payment/webhook")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events"""
+    if not PAYMENT_SERVICE_AVAILABLE:
+        return {'status': 'payment service unavailable'}
+    
+    try:
+        payload = await request.body()
+        signature = request.headers.get('stripe-signature')
+        
+        return payment_service.process_webhook(payload.decode(), signature)
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Cloud Storage API
+@app.post("/api/storage/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    user_id: str = Form(...),
+    metadata: Optional[str] = Form(None)
+):
+    """Upload a file to cloud storage"""
+    if not STORAGE_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Storage service unavailable")
+    
+    try:
+        # Read file data
+        file_data = await file.read()
+        
+        # Parse metadata if provided
+        file_metadata = {}
+        if metadata:
+            import json
+            try:
+                file_metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
+        
+        # Upload file
+        result = cloud_storage_service.upload_file(
+            file_data=file_data,
+            filename=file.filename,
+            user_id=user_id,
+            content_type=file.content_type,
+            metadata=file_metadata
+        )
+        
+        return result
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+@app.get("/api/storage/files/{user_id}")
+async def list_user_files(user_id: str, prefix: Optional[str] = ""):
+    """List files for a user"""
+    if not STORAGE_SERVICE_AVAILABLE:
+        return {'files': [], 'total': 0}
+    
+    try:
+        files = cloud_storage_service.list_user_files(user_id, prefix or "")
+        return {
+            'files': files,
+            'total': len(files),
+            'user_id': user_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/storage/download/{file_key:path}")
+async def download_file(file_key: str, user_id: str):
+    """Download a file"""
+    if not STORAGE_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Storage service unavailable")
+    
+    try:
+        result = cloud_storage_service.download_file(file_key, user_id)
+        
+        # Return file as streaming response
+        return StreamingResponse(
+            io.BytesIO(result['content']),
+            media_type=result['content_type'],
+            headers={
+                "Content-Disposition": f"attachment; filename={result['metadata'].get('original_filename', 'download')}"
+            }
+        )
+        
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/storage/files/{file_key:path}")
+async def delete_file(file_key: str, user_id: str):
+    """Delete a file"""
+    if not STORAGE_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Storage service unavailable")
+    
+    try:
+        result = cloud_storage_service.delete_file(file_key, user_id)
+        return result
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/storage/usage/{user_id}")
+async def get_storage_usage(user_id: str):
+    """Get user's storage usage"""
+    if not STORAGE_SERVICE_AVAILABLE:
+        return {
+            'user_id': user_id,
+            'total_files': 0,
+            'total_size': 0,
+            'total_size_mb': 0,
+            'max_size_mb': 1024,
+            'usage_percent': 0,
+            'provider': 'unavailable'
+        }
+    
+    try:
+        return cloud_storage_service.get_user_storage_usage(user_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     print("Starting Qlib Pro Production API...")
