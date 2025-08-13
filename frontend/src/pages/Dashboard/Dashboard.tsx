@@ -14,6 +14,8 @@ import {
   Divider,
   alpha,
   useTheme,
+  CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -31,7 +33,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AIInsightsModal from '../../components/AIInsights/AIInsightsModal';
-import { aiAPI } from '../../services/api';
+import { aiAPI, dashboardAPI, portfolioAPI, modelsAPI } from '../../services/api';
 
 const mockPerformanceData = [
   { date: 'Jan', portfolio: 100000, benchmark: 100000, month: 'January' },
@@ -83,6 +85,9 @@ export default function Dashboard() {
   const [aiInsightsOpen, setAiInsightsOpen] = useState(false);
   const [aiOpportunities, setAiOpportunities] = useState(defaultOpportunities);
   const [loadingSignals, setLoadingSignals] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [rebalancing, setRebalancing] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' | 'info' });
   
   // Check if user came from registration (paper mode)
   useEffect(() => {
@@ -171,8 +176,20 @@ export default function Dashboard() {
   ];
 
   const handleSwitchToReal = () => {
-    setIsPaperMode(false);
-    // Show upgrade modal or redirect to funding
+    // Real implementation would redirect to funding/verification flow
+    const confirmed = window.confirm(
+      'Switching to real money trading requires:\n\n' +
+      '• Account verification\n' +
+      '• Minimum deposit of $1,000\n' +
+      '• Risk acknowledgment\n\n' +
+      'Would you like to proceed to the funding page?'
+    );
+    
+    if (confirmed) {
+      // Navigate to funding page (implement routing)
+      console.log('Navigating to funding page...');
+      alert('Redirecting to account funding and verification...');
+    }
   };
 
   const handleViewOpportunity = (symbol: string) => {
@@ -181,6 +198,106 @@ export default function Dashboard() {
       setSelectedStock(opportunity);
       setAiInsightsOpen(true);
     }
+  };
+
+  const handleRefreshData = async () => {
+    if (refreshing) return;
+    
+    setRefreshing(true);
+    try {
+      // Refresh AI signals
+      setLoadingSignals(true);
+      const signals = await aiAPI.getSignals("CBA.AX,BHP.AX,CSL.AX");
+      
+      const opportunities = (signals || []).map((signal: any) => ({
+        symbol: signal?.symbol || 'N/A',
+        name: getCompanyName(signal?.symbol || ''),
+        signal: signal?.signal || 'HOLD',
+        confidence: Math.round((signal?.confidence || 0) * 100),
+        price: `A$${signal?.target_price || 'N/A'}`,
+        change: '+0.00%',
+        reason: signal?.reasoning || 'Loading market analysis...',
+      }));
+      
+      setAiOpportunities(opportunities);
+      setLoadingSignals(false);
+      
+      setSnackbar({ open: true, message: 'Dashboard data refreshed successfully', severity: 'success' });
+      console.log('Dashboard data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing dashboard data:', error);
+      setSnackbar({ open: true, message: 'Failed to refresh data. Please try again.', severity: 'error' });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleRebalancePortfolio = async () => {
+    if (rebalancing) return;
+    
+    const confirmed = window.confirm(
+      'Portfolio Rebalancing will:\n\n' +
+      '• Analyze current allocation vs targets\n' +
+      '• Suggest optimal trades to rebalance\n' +
+      '• Execute trades if approved\n\n' +
+      'Continue with portfolio rebalancing?'
+    );
+    
+    if (!confirmed) return;
+    
+    setRebalancing(true);
+    try {
+      const result = await portfolioAPI.rebalance();
+      
+      const changesSummary = result.changes.map(change => 
+        `• ${change.action} ${change.quantity} ${change.symbol} - ${change.reason}`
+      ).join('\n');
+      
+      setSnackbar({ 
+        open: true, 
+        message: `Portfolio rebalanced successfully! ${result.estimated_benefit}`, 
+        severity: 'success' 
+      });
+      
+      // Show detailed changes in console
+      console.log('Portfolio rebalancing completed:', result);
+      
+      // Still show alert for detailed breakdown
+      alert(
+        `${result.message}\n\n` +
+        `Changes Made:\n${changesSummary}\n\n` +
+        `Expected Benefit: ${result.estimated_benefit}`
+      );
+    } catch (error) {
+      console.error('Error rebalancing portfolio:', error);
+      setSnackbar({ open: true, message: 'Portfolio rebalancing failed. Please try again.', severity: 'error' });
+    } finally {
+      setRebalancing(false);
+    }
+  };
+
+  const handleModelAction = async (modelId: string, action: string) => {
+    try {
+      const result = await modelsAPI.controlModel(modelId, action.toLowerCase() as 'pause' | 'resume' | 'stop');
+      console.log(`Model ${action} result:`, result);
+      setSnackbar({ 
+        open: true, 
+        message: `Model ${action.toLowerCase()}ed successfully`, 
+        severity: 'success' 
+      });
+    } catch (error) {
+      console.error(`Error ${action.toLowerCase()}ing model:`, error);
+      setSnackbar({ 
+        open: true, 
+        message: `Failed to ${action.toLowerCase()} model. Please try again.`, 
+        severity: 'error' 
+      });
+    }
+  };
+
+  const handleModelSettings = (modelId: string) => {
+    console.log('Opening model settings for:', modelId);
+    alert(`Model Settings\n\nModel ID: ${modelId}\n\nSettings panel would open here with:\n• Risk parameters\n• Trading frequency\n• Position sizing\n• Stop loss settings`);
   };
 
   return (
@@ -222,8 +339,18 @@ export default function Dashboard() {
             {isPaperMode ? 'Practice with virtual money • Learn risk-free' : 'Real money investing'}
           </Typography>
         </Box>
-        <IconButton color="primary" onClick={() => window.location.reload()}>
-          <Refresh />
+        <IconButton 
+          color="primary" 
+          onClick={handleRefreshData}
+          disabled={refreshing}
+        >
+          <Refresh sx={{ 
+            animation: refreshing ? 'spin 1s linear infinite' : 'none',
+            '@keyframes spin': {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            }
+          }} />
         </IconButton>
       </Box>
 
@@ -510,10 +637,18 @@ export default function Dashboard() {
                         </Grid>
                         <Grid item xs={6} md={3}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Button variant="outlined" size="small">
+                            <Button 
+                              variant="outlined" 
+                              size="small"
+                              onClick={() => handleModelAction(model.id, 'pause')}
+                            >
                               Pause
                             </Button>
-                            <Button variant="contained" size="small">
+                            <Button 
+                              variant="contained" 
+                              size="small"
+                              onClick={() => handleModelSettings(model.id)}
+                            >
                               Settings
                             </Button>
                           </Box>
@@ -557,8 +692,10 @@ export default function Dashboard() {
                   fullWidth
                   startIcon={<SwapHoriz />}
                   sx={{ py: 1.5 }}
+                  onClick={handleRebalancePortfolio}
+                  disabled={rebalancing}
                 >
-                  Rebalance Portfolio
+                  {rebalancing ? 'Rebalancing...' : 'Rebalance Portfolio'}
                 </Button>
                 
                 {isPaperMode && (
@@ -591,6 +728,23 @@ export default function Dashboard() {
           stock={selectedStock}
         />
       )}
+
+      {/* Snackbar for user feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

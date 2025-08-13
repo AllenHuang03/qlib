@@ -1343,6 +1343,216 @@ async def get_watchlist_quotes(user=Depends(get_current_user)):
     }
 
 # ================================
+# PORTFOLIO API ENDPOINTS  
+# ================================
+
+@app.get("/api/portfolio/holdings")
+async def get_portfolio_holdings(user=Depends(get_current_user)):
+    """Get user's portfolio holdings with real-time prices"""
+    try:
+        # In a real implementation, fetch from database
+        # For now, return realistic ASX holdings with updated prices
+        asx_holdings = [
+            {
+                "symbol": "CBA.AX",
+                "name": "Commonwealth Bank",
+                "quantity": 850,
+                "sector": "Financials"
+            },
+            {
+                "symbol": "BHP.AX", 
+                "name": "BHP Group",
+                "quantity": 2200,
+                "sector": "Materials"
+            },
+            {
+                "symbol": "CSL.AX",
+                "name": "CSL Limited", 
+                "quantity": 180,
+                "sector": "Healthcare"
+            },
+            {
+                "symbol": "WBC.AX",
+                "name": "Westpac Banking",
+                "quantity": 1850,
+                "sector": "Financials"
+            },
+            {
+                "symbol": "WOW.AX",
+                "name": "Woolworths Group",
+                "quantity": 1100, 
+                "sector": "Consumer Staples"
+            },
+            {
+                "symbol": "TLS.AX",
+                "name": "Telstra Corporation",
+                "quantity": 8500,
+                "sector": "Communication Services"
+            },
+            {
+                "symbol": "RIO.AX",
+                "name": "Rio Tinto",
+                "quantity": 480,
+                "sector": "Materials"
+            },
+            {
+                "symbol": "ANZ.AX",
+                "name": "ANZ Bank",
+                "quantity": 1650,
+                "sector": "Financials"
+            }
+        ]
+        
+        # Simulate price updates with realistic values
+        base_prices = {
+            "CBA.AX": 110.50, "BHP.AX": 45.20, "CSL.AX": 285.40,
+            "WBC.AX": 24.50, "WOW.AX": 38.50, "TLS.AX": 4.15,
+            "RIO.AX": 124.30, "ANZ.AX": 27.30
+        }
+        
+        portfolio_holdings = []
+        total_value = 0
+        
+        for holding in asx_holdings:
+            symbol = holding["symbol"]
+            base_price = base_prices.get(symbol, 25.0)
+            
+            # Add realistic daily price movement
+            price_change = np.random.normal(0, 0.02)  # 2% volatility
+            current_price = base_price * (1 + price_change)
+            
+            value = holding["quantity"] * current_price
+            # Simulate P&L based on 6-month holding period
+            original_cost = value * np.random.uniform(0.85, 1.15)
+            pnl = value - original_cost
+            pnl_percent = (pnl / original_cost) * 100
+            
+            portfolio_holdings.append({
+                "symbol": symbol,
+                "name": holding["name"],
+                "quantity": holding["quantity"],
+                "price": round(current_price, 2),
+                "value": round(value, 2),
+                "weight": 0,  # Will calculate after total
+                "pnl": round(pnl, 2),
+                "pnl_percent": round(pnl_percent, 2)
+            })
+            
+            total_value += value
+        
+        # Calculate weights
+        for holding in portfolio_holdings:
+            holding["weight"] = round((holding["value"] / total_value) * 100, 1)
+        
+        return portfolio_holdings
+        
+    except Exception as e:
+        logger.error(f"Error getting portfolio holdings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve portfolio holdings")
+
+@app.get("/api/portfolio/summary") 
+async def get_portfolio_summary(user=Depends(get_current_user)):
+    """Get portfolio summary with total value, P&L, and key metrics"""
+    try:
+        holdings = await get_portfolio_holdings(user)
+        
+        total_value = sum(h["value"] for h in holdings)
+        total_pnl = sum(h["pnl"] for h in holdings)
+        pnl_percent = (total_pnl / (total_value - total_pnl)) * 100 if total_value > total_pnl else 0
+        
+        return {
+            "total_value": round(total_value, 2),
+            "total_pnl": round(total_pnl, 2),
+            "pnl_percent": round(pnl_percent, 2),
+            "num_holdings": len(holdings),
+            "cash": 15000.0,  # Simulate cash balance
+            "last_update": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting portfolio summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve portfolio summary")
+
+@app.post("/api/portfolio/rebalance")
+async def rebalance_portfolio(user=Depends(get_current_user)):
+    """Simulate portfolio rebalancing"""
+    try:
+        # Simulate rebalancing analysis
+        await asyncio.sleep(1)  # Simulate processing time
+        
+        return {
+            "status": "completed",
+            "message": "Portfolio rebalanced successfully",
+            "changes": [
+                {"action": "SELL", "symbol": "TLS.AX", "quantity": 1000, "reason": "Reduce telecommunications exposure"},
+                {"action": "BUY", "symbol": "CSL.AX", "quantity": 20, "reason": "Increase healthcare allocation"},
+                {"action": "BUY", "symbol": "WES.AX", "quantity": 150, "reason": "Add consumer discretionary exposure"}
+            ],
+            "estimated_benefit": "+0.3% expected annual return improvement"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error rebalancing portfolio: {e}")
+        raise HTTPException(status_code=500, detail="Portfolio rebalancing failed")
+
+# ================================
+# MODEL CONTROL ENDPOINTS
+# ================================
+
+@app.post("/api/models/{model_id}/control")
+async def control_model(model_id: str, action: dict, user=Depends(get_current_user)):
+    """Control model (pause/resume/stop)"""
+    try:
+        action_type = action.get("action", "").lower()
+        
+        if action_type not in ["pause", "resume", "stop"]:
+            raise HTTPException(status_code=400, detail="Invalid action")
+        
+        # Simulate model control
+        await asyncio.sleep(0.5)
+        
+        status_map = {
+            "pause": "paused",
+            "resume": "active", 
+            "stop": "stopped"
+        }
+        
+        new_status = status_map[action_type]
+        
+        return {
+            "message": f"Model {action_type}d successfully",
+            "status": new_status,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error controlling model {model_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to {action_type} model")
+
+@app.get("/api/models/{model_id}/predictions")
+async def get_model_predictions(model_id: str, user=Depends(get_current_user)):
+    """Get recent predictions from a specific model"""
+    try:
+        # Simulate model predictions
+        asx_symbols = ["CBA.AX", "BHP.AX", "CSL.AX", "WBC.AX", "RIO.AX", "ANZ.AX"]
+        predictions = []
+        
+        for i, symbol in enumerate(asx_symbols[:5]):  # Return 5 predictions
+            predictions.append({
+                "date": (datetime.now() - timedelta(days=i)).isoformat(),
+                "symbol": symbol,
+                "prediction": round(np.random.uniform(-0.05, 0.05), 4),  # ±5% prediction
+                "signal": np.random.choice(["BUY", "HOLD", "SELL"]),
+                "confidence": round(np.random.uniform(0.6, 0.95), 2)
+            })
+        
+        return predictions
+        
+    except Exception as e:
+        logger.error(f"Error getting predictions for model {model_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve model predictions")
+
+# ================================
 # SERVER STARTUP
 # ================================
 

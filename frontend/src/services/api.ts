@@ -356,6 +356,21 @@ export const portfolioAPI = {
     const response: AxiosResponse<PortfolioSummary> = await api.get('/portfolio/summary');
     return response.data;
   },
+
+  rebalance: async (): Promise<{
+    status: string;
+    message: string;
+    changes: Array<{
+      action: string;
+      symbol: string;
+      quantity: number;
+      reason: string;
+    }>;
+    estimated_benefit: string;
+  }> => {
+    const response = await api.post('/portfolio/rebalance');
+    return response.data;
+  },
 };
 
 // Data API
