@@ -121,11 +121,11 @@ ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_KEY", "YR3O8FBCPDC5IVEX")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
-    print("🚀 Qlib Pro Production API Starting...")
-    print(f"📊 Loaded {len(MOCK_MODELS)} models")
-    print(f"💾 Loaded {len(MOCK_DATASETS)} datasets")
+    print("Qlib Pro Production API Starting...")
+    print(f"Loaded {len(MOCK_MODELS)} models")
+    print(f"Loaded {len(MOCK_DATASETS)} datasets")
     yield
-    print("⏹️  Qlib Pro Production API Shutting down...")
+    print("Qlib Pro Production API Shutting down...")
 
 # Create FastAPI app
 app = FastAPI(
@@ -381,14 +381,14 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 if __name__ == "__main__":
-    print("🚀 Starting Qlib Pro Production API...")
-    print("📖 Documentation: http://localhost:8001/docs")
-    print("🔍 Health Check: http://localhost:8001/health")
+    print("Starting Qlib Pro Production API...")
+    print("Documentation: http://localhost:8080/docs")
+    print("Health Check: http://localhost:8080/health")
     
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=8001,
+        host="127.0.0.1",
+        port=8080,
         reload=False,
         access_log=True
     )
