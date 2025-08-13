@@ -47,23 +47,26 @@ api.interceptors.response.use(
     
     // Handle common API response patterns and prevent null errors
     if (response.data) {
-      // Ensure arrays exist for list endpoints
-      if (response.config?.url?.includes('/quotes') && !response.data.quotes) {
+      // Ensure arrays exist for list endpoints - with null safety
+      const url = response.config?.url || '';
+      if (url.includes('/quotes') && !response.data.quotes) {
         response.data.quotes = [];
       }
-      if (response.config?.url?.includes('/datasets') && !response.data.datasets) {
+      if (url.includes('/datasets') && !response.data.datasets) {
         response.data.datasets = [];
       }
-      if (response.config?.url?.includes('/signals') && !response.data.signals) {
+      if (url.includes('/signals') && !response.data.signals) {
         response.data.signals = [];
       }
       
-      // Ensure strings are never null
-      Object.keys(response.data).forEach(key => {
-        if (response.data[key] === null) {
-          response.data[key] = '';
-        }
-      });
+      // Ensure strings are never null - with null safety
+      if (response.data && typeof response.data === 'object') {
+        Object.keys(response.data).forEach(key => {
+          if (response.data[key] === null) {
+            response.data[key] = '';
+          }
+        });
+      }
     }
     
     return response;
@@ -71,8 +74,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Only redirect to login if not already on login/register pages
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+      const currentPath = window.location?.pathname || '';
+      if (currentPath && !currentPath.includes('/login') && !currentPath.includes('/register')) {
         localStorage.removeItem('auth-token');
         console.log('🔐 Auth token expired, redirecting to login');
         window.location.href = '/login';
