@@ -9,6 +9,8 @@ import hashlib
 import asyncio
 import httpx
 import json
+import secrets
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
@@ -394,6 +396,10 @@ def health():
 # AUTHENTICATION ENDPOINTS
 # ================================
 
+# In-memory store for verification codes (use Redis in production)
+verification_codes = {}
+password_reset_tokens = {}
+
 @app.post("/api/auth/register")
 def register(user_data: UserRegister):
     """User registration with validation"""
@@ -440,6 +446,155 @@ def register(user_data: UserRegister):
             "subscription_tier": new_user["subscription_tier"]
         }
     }
+
+@app.post("/api/auth/send-verification")
+async def send_email_verification(request: dict):
+    """Send email verification code"""
+    email = request.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+    
+    # Generate 6-digit verification code
+    verification_code = f"{secrets.randbelow(900000) + 100000}"
+    
+    # Store code with expiration (10 minutes)
+    verification_codes[email] = {
+        "code": verification_code,
+        "expires": datetime.now() + timedelta(minutes=10),
+        "attempts": 0
+    }
+    
+    try:
+        # Send email via auth service (if SMTP configured)
+        if auth_service.is_email_configured():
+            await auth_service.send_verification_email(email, verification_code)
+            return {"message": "Verification code sent to your email"}
+        else:
+            # Development mode - return code in response (remove in production)
+            return {
+                "message": "Email service not configured - using development mode",
+                "verification_code": verification_code,
+                "note": "In production, this code would be sent via email"
+            }
+    except Exception as e:
+        logger.error(f"Failed to send verification email: {e}")
+        return {
+            "message": "Email sending failed - using development mode", 
+            "verification_code": verification_code
+        }
+
+@app.post("/api/auth/verify-email")
+def verify_email(request: dict):
+    """Verify email with code"""
+    email = request.get("email")
+    code = request.get("code")
+    
+    if not email or not code:
+        raise HTTPException(status_code=400, detail="Email and code required")
+    
+    if email not in verification_codes:
+        raise HTTPException(status_code=400, detail="No verification code found")
+    
+    stored = verification_codes[email]
+    
+    # Check expiration
+    if datetime.now() > stored["expires"]:
+        del verification_codes[email]
+        raise HTTPException(status_code=400, detail="Verification code expired")
+    
+    # Check attempts (max 3)
+    if stored["attempts"] >= 3:
+        del verification_codes[email]
+        raise HTTPException(status_code=400, detail="Too many attempts")
+    
+    # Verify code
+    if code != stored["code"]:
+        stored["attempts"] += 1
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    # Success - remove code
+    del verification_codes[email]
+    
+    # Mark user as verified if they exist
+    if email in USERS_DB:
+        USERS_DB[email]["email_verified"] = True
+    
+    return {"message": "Email verified successfully"}
+
+@app.post("/api/auth/forgot-password")
+async def forgot_password(request: dict):
+    """Send password reset link/code"""
+    email = request.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+    
+    if email not in USERS_DB:
+        # Don't reveal if email exists for security
+        return {"message": "If the email exists, a reset link has been sent"}
+    
+    # Generate secure reset token
+    reset_token = secrets.token_urlsafe(32)
+    
+    # Store token with expiration (1 hour)
+    password_reset_tokens[reset_token] = {
+        "email": email,
+        "expires": datetime.now() + timedelta(hours=1)
+    }
+    
+    try:
+        # Send password reset email
+        if auth_service.is_email_configured():
+            reset_link = f"https://startling-dragon-196548.netlify.app/reset-password?token={reset_token}"
+            await auth_service.send_password_reset_email(email, reset_link)
+            return {"message": "Password reset link sent to your email"}
+        else:
+            # Development mode
+            return {
+                "message": "Email service not configured - using development mode",
+                "reset_token": reset_token,
+                "reset_link": f"https://startling-dragon-196548.netlify.app/reset-password?token={reset_token}",
+                "note": "In production, this link would be sent via email"
+            }
+    except Exception as e:
+        logger.error(f"Failed to send reset email: {e}")
+        return {
+            "message": "Password reset initiated - development mode",
+            "reset_token": reset_token
+        }
+
+@app.post("/api/auth/reset-password")
+def reset_password(request: dict):
+    """Reset password with token"""
+    token = request.get("token")
+    new_password = request.get("password")
+    
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token and new password required")
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    if token not in password_reset_tokens:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    stored = password_reset_tokens[token]
+    
+    # Check expiration
+    if datetime.now() > stored["expires"]:
+        del password_reset_tokens[token]
+        raise HTTPException(status_code=400, detail="Reset token expired")
+    
+    email = stored["email"]
+    
+    # Update password
+    if email in USERS_DB:
+        USERS_DB[email]["password"] = hash_password(new_password)
+        USERS_DB[email]["last_password_reset"] = datetime.now().isoformat()
+    
+    # Remove used token
+    del password_reset_tokens[token]
+    
+    return {"message": "Password reset successfully"}
 
 @app.post("/api/auth/login")
 def login(user_data: UserLogin):
