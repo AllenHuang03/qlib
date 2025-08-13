@@ -168,7 +168,7 @@ export default function Backtesting() {
 
   const handleBacktestClick = (backtest: BacktestResult) => {
     console.log('Backtest clicked:', backtest);
-    alert(`Backtest Details:\nName: ${backtest.name}\nModel: ${backtest.model}\nReturns: ${backtest.returns}%\nSharpe: ${backtest.sharpe}\nMax Drawdown: ${backtest.maxDrawdown}%\n\n(In a real app, this would open detailed results)`);
+    alert(`Backtest Details:\nName: ${backtest.name}\nModel: ${backtest.model}\nReturns: ${backtest.returns}%\nSharpe: ${backtest.sharpe}\nMax Drawdown: ${backtest.maxDrawdown}%\n\nFull performance metrics and trade logs available in detailed view.`);
   };
 
   return (

@@ -309,8 +309,9 @@ export default function Dashboard() {
                 borderColor: 'white',
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
               }}
+              onClick={() => navigate('/upgrade')}
             >
-              Learn More
+              See Pricing
             </Button>
           </Box>
         </CardContent>

@@ -15,8 +15,10 @@ import {
   IconButton,
   Tabs,
   Tab,
+  Button,
+  Divider,
 } from '@mui/material';
-import { TrendingUp, TrendingDown, Refresh, AccountBalance, CloudUpload, Visibility, Security, TrendingUp as GrowthIcon } from '@mui/icons-material';
+import { TrendingUp, TrendingDown, Refresh, AccountBalance, CloudUpload, Visibility, Security, TrendingUp as GrowthIcon, Add, GetApp } from '@mui/icons-material';
 import { portfolioAPI, marketAPI } from '../../services/api';
 import { CircularProgress, Snackbar, Alert } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -210,6 +212,9 @@ export default function Portfolio() {
     
     if (hasData) {
       handleRefreshPortfolio();
+    } else {
+      // Show demo data by default so import/export functionality is visible
+      setHoldings(mockHoldings);
     }
   }, []);
 
@@ -256,26 +261,83 @@ export default function Portfolio() {
     setSnackbar({ open: true, message: 'Viewing demo portfolio - connect real data for personalized insights', severity: 'info' });
   };
 
+  const handleExportCSV = () => {
+    if (holdings.length === 0) {
+      setSnackbar({ open: true, message: 'No holdings to export', severity: 'warning' });
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['Symbol', 'Name', 'Quantity', 'Price', 'Value', 'Weight%', 'PnL', 'PnL%'];
+    const csvContent = [
+      headers.join(','),
+      ...holdings.map(holding => [
+        holding.symbol,
+        `"${holding.name}"`,
+        holding.quantity,
+        holding.price.toFixed(2),
+        holding.value.toFixed(2),
+        holding.weight.toFixed(1),
+        holding.pnl.toFixed(2),
+        holding.pnlPercent.toFixed(2)
+      ].join(','))
+    ].join('\n');
+
+    // Create download
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `portfolio_holdings_${new Date().toISOString().split('T')[0]}.csv`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    setSnackbar({ open: true, message: 'Portfolio exported successfully!', severity: 'success' });
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">
           Portfolio
         </Typography>
-        <IconButton 
-          color="primary" 
-          onClick={handleRefreshPortfolio}
-          disabled={loading}
-          title={`Last updated: ${lastUpdated.toLocaleTimeString()}`}
-        >
-          <Refresh sx={{ 
-            animation: loading ? 'spin 1s linear infinite' : 'none',
-            '@keyframes spin': {
-              '0%': { transform: 'rotate(0deg)' },
-              '100%': { transform: 'rotate(360deg)' }
-            }
-          }} />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button
+            variant="outlined"
+            startIcon={<CloudUpload />}
+            onClick={handleUploadCSV}
+            size="small"
+          >
+            Import CSV
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<GetApp />}
+            onClick={handleExportCSV}
+            size="small"
+            disabled={holdings.length === 0}
+          >
+            Export CSV
+          </Button>
+          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+          <IconButton 
+            color="primary" 
+            onClick={handleRefreshPortfolio}
+            disabled={loading}
+            title={`Last updated: ${lastUpdated.toLocaleTimeString()}`}
+          >
+            <Refresh sx={{ 
+              animation: loading ? 'spin 1s linear infinite' : 'none',
+              '@keyframes spin': {
+                '0%': { transform: 'rotate(0deg)' },
+                '100%': { transform: 'rotate(360deg)' }
+              }
+            }} />
+          </IconButton>
+        </Box>
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
