@@ -126,13 +126,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           token
         });
       } catch (error) {
-        // Token is invalid, clear it
-        localStorage.removeItem('auth-token');
-        set({
-          user: null,
-          isAuthenticated: false,
-          token: null
-        });
+        console.log('Profile fetch failed, checking for demo token...');
+        // If it's the demo token, keep the demo user authenticated
+        if (token === 'demo-token-123') {
+          const user: User = {
+            id: 'demo-user-1',
+            email: 'demo@qlib.com',
+            name: 'Demo User',
+            role: 'user',
+            subscription_tier: 'free',
+            paper_trading: true
+          };
+          
+          set({
+            user,
+            isAuthenticated: true,
+            token
+          });
+        } else {
+          // Token is invalid, clear it
+          localStorage.removeItem('auth-token');
+          set({
+            user: null,
+            isAuthenticated: false,
+            token: null
+          });
+        }
       }
     }
   },
