@@ -1292,6 +1292,49 @@ async def get_models(user=Depends(get_current_user)):
         }
     ]
 
+class CreateModelRequest(BaseModel):
+    name: str
+    type: str
+    description: str
+
+# Storage for models
+MODELS_STORAGE = []
+
+@app.post("/api/models")
+async def create_model(model_data: CreateModelRequest, user=Depends(get_current_user)):
+    """Create a new AI model"""
+    try:
+        # Simulate model creation processing
+        await asyncio.sleep(1)
+        
+        new_model = {
+            "id": f"model-{len(MODELS_STORAGE) + 1}",
+            "name": model_data.name,
+            "type": model_data.type,
+            "status": "training",
+            "accuracy": 0,
+            "sharpe": 0,
+            "trades_today": 0,
+            "monthly_return": "$0",
+            "last_prediction": None,
+            "description": model_data.description,
+            "created_at": datetime.now().isoformat(),
+            "user_id": user["id"]
+        }
+        
+        MODELS_STORAGE.append(new_model)
+        
+        return {
+            "message": f"Model '{model_data.name}' created successfully",
+            "model": new_model,
+            "status": "training",
+            "estimated_completion": "2-4 hours"
+        }
+        
+    except Exception as e:
+        print(f"Error creating model: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create model")
+
 # ================================
 # USER MANAGEMENT ENDPOINTS
 # ================================
