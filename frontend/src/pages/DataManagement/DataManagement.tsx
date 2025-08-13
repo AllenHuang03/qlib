@@ -112,24 +112,36 @@ export default function DataManagement() {
     }
   };
 
-  const handleDownload = (dataset: Dataset) => {
-    // Create a mock CSV content
-    const csvContent = `Date,Symbol,Price,Volume\n2024-01-15,CBA.AX,110.50,1250000\n2024-01-15,BHP.AX,45.20,2100000\n2024-01-15,CSL.AX,285.40,850000`;
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${dataset.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
-    
-    // Trigger download
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    alert(`Downloaded ${dataset.name} dataset!\n\nFile contains: ${dataset.records} records\nSize: ${dataset.size}\nFormat: CSV with Date, Symbol, Price, Volume columns`);
+  const handleDownload = async (dataset: Dataset) => {
+    try {
+      const response = await fetch(`/api/data/datasets/${dataset.id}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+        }
+      });
+      
+      if (response.ok) {
+        // Create download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${dataset.name.replace(/\s+/g, '_')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log(`Downloaded ${dataset.name} dataset with ${dataset.records} records`);
+      } else {
+        alert('Failed to download dataset. Please try again.');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download dataset. Please try again.');
+    }
   };
 
   const handleRefreshDataset = async (dataset: Dataset) => {
@@ -142,10 +154,10 @@ export default function DataManagement() {
       };
       
       setDatasets(prev => prev.map(d => d.id === dataset.id ? updatedDataset : d));
-      alert(`${dataset.name} refreshed successfully!\n\nNew records: ${updatedDataset.records}\nLast update: ${new Date().toLocaleTimeString()}`);
+      console.log(`${dataset.name} refreshed successfully! New records: ${updatedDataset.records}`);
     } catch (error) {
       console.error('Error refreshing dataset:', error);
-      alert(`Failed to refresh ${dataset.name}. Please try again.`);
+      // Could add a toast notification here instead of alert
     }
   };
 

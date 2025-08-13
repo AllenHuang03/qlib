@@ -272,6 +272,85 @@ async def control_model(model_id: str, request: Request):
             return {"message": f"Model {action}ed successfully", "status": model.status}
     raise HTTPException(status_code=404, detail="Model not found")
 
+@app.delete("/api/models/{model_id}")
+async def delete_model(model_id: str):
+    """Delete a model"""
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            # In real implementation, would delete model from Qlib service
+            model = qlib_service.get_model(model_id)
+            if model:
+                del qlib_service.available_models[model_id]
+                return {"message": f"Model '{model['name']}' deleted successfully"}
+        except Exception as e:
+            print(f"Error deleting model from Qlib service: {e}")
+    
+    # Fallback to mock data
+    for i, model in enumerate(MOCK_MODELS):
+        if model.id == model_id:
+            deleted_model = MOCK_MODELS.pop(i)
+            return {"message": f"Model '{deleted_model.name}' deleted successfully"}
+    raise HTTPException(status_code=404, detail="Model not found")
+
+@app.put("/api/models/{model_id}")
+async def update_model(model_id: str, request: Request):
+    """Update model configuration"""
+    body = await request.json()
+    
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            model = qlib_service.get_model(model_id)
+            if model:
+                # Update model configuration
+                model.update(body)
+                return {"message": "Model updated successfully", "model": model}
+        except Exception as e:
+            print(f"Error updating model in Qlib service: {e}")
+    
+    # Fallback to mock data
+    for model in MOCK_MODELS:
+        if model.id == model_id:
+            if "name" in body:
+                model.name = body["name"]
+            if "description" in body:
+                model.description = body["description"]
+            return {"message": "Model updated successfully", "model": model.dict()}
+    raise HTTPException(status_code=404, detail="Model not found")
+
+@app.post("/api/models/{model_id}/duplicate")
+async def duplicate_model(model_id: str):
+    """Duplicate an existing model"""
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            original_model = qlib_service.get_model(model_id)
+            if original_model:
+                new_model = qlib_service.create_model(
+                    name=f"{original_model['name']} (Copy)",
+                    model_type=original_model['type'],
+                    description=f"Copy of {original_model['description']}"
+                )
+                return {"message": "Model duplicated successfully", "model": new_model}
+        except Exception as e:
+            print(f"Error duplicating model in Qlib service: {e}")
+    
+    # Fallback to mock data
+    for model in MOCK_MODELS:
+        if model.id == model_id:
+            new_model = Model(
+                id=str(len(MOCK_MODELS) + 1),
+                name=f"{model.name} (Copy)",
+                type=model.type,
+                status="stopped",
+                accuracy=model.accuracy,
+                sharpe=model.sharpe,
+                last_trained=model.last_trained,
+                description=f"Copy of {model.description}",
+                created_at=datetime.datetime.now().isoformat()
+            )
+            MOCK_MODELS.append(new_model)
+            return {"message": "Model duplicated successfully", "model": new_model.dict()}
+    raise HTTPException(status_code=404, detail="Model not found")
+
 # AI Signals API
 @app.get("/api/signals")
 async def get_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX"):
@@ -391,10 +470,76 @@ async def refresh_data():
         dataset.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     
     return {
-        "message": "Market data refreshed successfully",
+        "message": "Market data refreshed successfully", 
         "datasets_updated": len(MOCK_DATASETS),
         "last_update": datetime.datetime.now().isoformat()
     }
+
+@app.get("/api/data/datasets/{dataset_id}/download")
+async def download_dataset(dataset_id: str):
+    """Download dataset file"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    # Find the dataset
+    dataset = None
+    for d in MOCK_DATASETS:
+        if d.id == dataset_id:
+            dataset = d
+            break
+    
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    # Generate CSV data for download
+    csv_data = io.StringIO()
+    writer = csv.writer(csv_data)
+    
+    # CSV headers
+    writer.writerow(['Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    
+    # Generate sample data based on dataset
+    symbols = ['CBA.AX', 'BHP.AX', 'CSL.AX', 'WBC.AX', 'TLS.AX'][:int(dataset.records.replace(',', '')) // 100]
+    
+    for i in range(min(1000, int(dataset.records.replace(',', '')) // 10)):  # Limit for demo
+        date = (datetime.datetime.now() - datetime.timedelta(days=i)).strftime('%Y-%m-%d')
+        symbol = symbols[i % len(symbols)]
+        base_price = 50 + (hash(symbol) % 100)
+        price_var = random.uniform(0.95, 1.05)
+        
+        open_price = round(base_price * price_var, 2)
+        high_price = round(open_price * random.uniform(1.0, 1.05), 2)
+        low_price = round(open_price * random.uniform(0.95, 1.0), 2)
+        close_price = round((high_price + low_price) / 2 * random.uniform(0.98, 1.02), 2)
+        volume = random.randint(100000, 2000000)
+        
+        writer.writerow([date, symbol, open_price, high_price, low_price, close_price, volume])
+    
+    csv_data.seek(0)
+    
+    # Return as downloadable file
+    return StreamingResponse(
+        io.BytesIO(csv_data.getvalue().encode()),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={dataset.name.replace(' ', '_')}.csv"}
+    )
+
+@app.post("/api/data/sync")
+async def sync_data():
+    """Trigger data synchronization"""
+    await asyncio.sleep(2)  # Simulate sync time
+    
+    sync_results = {
+        "status": "completed",
+        "datasets_synced": len(MOCK_DATASETS),
+        "records_updated": sum(int(d.records.replace(',', '')) for d in MOCK_DATASETS),
+        "sync_time": datetime.datetime.now().isoformat(),
+        "data_quality_score": round(random.uniform(85, 98), 1),
+        "storage_used_mb": round(random.uniform(1500, 2500), 1)
+    }
+    
+    return sync_results
 
 # Dashboard API
 @app.get("/api/dashboard/summary")

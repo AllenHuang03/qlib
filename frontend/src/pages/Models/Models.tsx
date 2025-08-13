@@ -189,10 +189,26 @@ export function Models() {
         );
         
         if (confirmed) {
-          // In real implementation, call delete API
-          console.log('Deleting model:', selectedModel.name);
-          setModels(prev => prev.filter(m => m.id !== selectedModel.id));
-          alert(`Model "${selectedModel.name}" deleted successfully.`);
+          try {
+            const response = await fetch(`/api/models/${selectedModel.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              setModels(prev => prev.filter(m => m.id !== selectedModel.id));
+              console.log('Model deleted:', result.message);
+            } else {
+              setError('Failed to delete model');
+            }
+          } catch (err) {
+            console.error('Error deleting model:', err);
+            setError('Failed to delete model');
+          }
         }
       } else if (action === 'View Predictions') {
         try {
@@ -215,15 +231,27 @@ export function Models() {
       } else if (action === 'Edit') {
         alert(`Edit Model: ${selectedModel.name}\n\nEdit panel would open with:\n• Model parameters\n• Training configuration\n• Feature selection\n• Performance tuning`);
       } else if (action === 'Duplicate') {
-        const newModel: Model = {
-          ...selectedModel,
-          id: String(Date.now()),
-          name: `${selectedModel.name} (Copy)`,
-          status: 'stopped',
-          created_at: new Date().toISOString()
-        };
-        setModels(prev => [...prev, newModel]);
-        alert(`Model duplicated successfully!\n\nNew model: "${newModel.name}"\nStatus: Stopped (ready for training)`);
+        try {
+          const response = await fetch(`/api/models/${selectedModel.id}/duplicate`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            // Refresh models list to show the new duplicate
+            await fetchModels();
+            console.log('Model duplicated:', result.message);
+          } else {
+            setError('Failed to duplicate model');
+          }
+        } catch (err) {
+          console.error('Error duplicating model:', err);
+          setError('Failed to duplicate model');
+        }
       } else if (action === 'Export') {
         // Simulate model export
         const exportData = {
