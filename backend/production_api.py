@@ -17,6 +17,14 @@ import os
 import requests
 from contextlib import asynccontextmanager
 
+# Import Qlib service
+try:
+    from qlib_service import qlib_service
+    QLIB_SERVICE_AVAILABLE = True
+except ImportError:
+    print("Qlib service not available, using fallback")
+    QLIB_SERVICE_AVAILABLE = False
+
 # Data Models
 class Model(BaseModel):
     id: str
@@ -170,14 +178,39 @@ async def health():
 @app.get("/api/models", response_model=List[Model])
 async def get_models():
     """Get all AI models"""
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            models_data = qlib_service.get_models()
+            # Convert to Model objects for API response
+            models = [Model(**model) for model in models_data]
+            return models
+        except Exception as e:
+            print(f"Error getting models from Qlib service: {e}")
+    
+    # Fallback to mock data
     return MOCK_MODELS
 
-@app.post("/api/models", response_model=Model)
+@app.post("/api/models")
 async def create_model(model_data: CreateModelRequest):
     """Create a new AI model"""
-    # Simulate processing time
-    await asyncio.sleep(1)
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            new_model_data = qlib_service.create_model(
+                name=model_data.name,
+                model_type=model_data.type, 
+                description=model_data.description
+            )
+            return {
+                "message": f"Model '{model_data.name}' created successfully",
+                "model": new_model_data,
+                "status": "training",
+                "estimated_completion": "2-4 hours"
+            }
+        except Exception as e:
+            print(f"Error creating model with Qlib service: {e}")
     
+    # Fallback implementation
+    await asyncio.sleep(1)
     new_model = Model(
         id=str(len(MOCK_MODELS) + 1),
         name=model_data.name,
@@ -189,21 +222,45 @@ async def create_model(model_data: CreateModelRequest):
         description=model_data.description,
         created_at=datetime.datetime.now().isoformat()
     )
-    
     MOCK_MODELS.append(new_model)
-    return new_model
+    return {
+        "message": f"Model '{model_data.name}' created successfully",
+        "model": new_model.dict(),
+        "status": "training",
+        "estimated_completion": "2-4 hours"
+    }
 
 @app.get("/api/models/{model_id}", response_model=Model)
 async def get_model(model_id: str):
     """Get specific model by ID"""
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            model_data = qlib_service.get_model(model_id)
+            if model_data:
+                return Model(**model_data)
+        except Exception as e:
+            print(f"Error getting model from Qlib service: {e}")
+    
+    # Fallback to mock data
     for model in MOCK_MODELS:
         if model.id == model_id:
             return model
     raise HTTPException(status_code=404, detail="Model not found")
 
 @app.post("/api/models/{model_id}/control")
-async def control_model(model_id: str, action: str):
+async def control_model(model_id: str, request: Request):
     """Control model (pause/resume/stop)"""
+    body = await request.json()
+    action = body.get("action", "").lower()
+    
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            result = qlib_service.control_model(model_id, action)
+            return result
+        except Exception as e:
+            print(f"Error controlling model with Qlib service: {e}")
+    
+    # Fallback to mock implementation
     for model in MOCK_MODELS:
         if model.id == model_id:
             if action == "pause":

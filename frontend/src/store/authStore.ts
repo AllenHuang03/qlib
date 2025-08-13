@@ -115,6 +115,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initializeAuth: async () => {
+    set({ loading: true });
     const token = localStorage.getItem('auth-token');
     if (token) {
       try {
@@ -123,7 +124,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({
           user: userProfile,
           isAuthenticated: true,
-          token
+          token,
+          loading: false
         });
       } catch (error) {
         console.log('Profile fetch failed, checking for demo token...');
@@ -141,7 +143,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({
             user,
             isAuthenticated: true,
-            token
+            token,
+            loading: false
           });
         } else {
           // Token is invalid, clear it
@@ -149,10 +152,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({
             user: null,
             isAuthenticated: false,
-            token: null
+            token: null,
+            loading: false
           });
         }
       }
+    } else {
+      set({ loading: false });
     }
   },
 }));

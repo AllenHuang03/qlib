@@ -18,7 +18,7 @@ import Upgrade from './pages/Upgrade/Upgrade';
 import { useAuthStore } from './store/authStore';
 
 function App() {
-  const { isAuthenticated, initializeAuth } = useAuthStore();
+  const { isAuthenticated, initializeAuth, loading } = useAuthStore();
   const location = useLocation();
 
   // Initialize authentication on app startup
@@ -29,6 +29,11 @@ function App() {
   // Public routes that don't require authentication
   const publicRoutes = ['/', '/landing', '/register', '/login'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
+
+  // Show loading while initializing auth to prevent flash
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   // Show landing page for root path if not authenticated
   if (!isAuthenticated && location.pathname === '/') {

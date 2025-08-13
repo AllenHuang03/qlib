@@ -189,8 +189,9 @@ export default function DataManagement() {
   };
 
   const totalSize = datasets.reduce((sum, dataset) => {
-    const sizeValue = parseFloat(dataset.size);
-    const unit = dataset.size.includes('GB') ? 1024 : 1;
+    const size = dataset.size || '0 MB';
+    const sizeValue = parseFloat(size);
+    const unit = size.includes('GB') ? 1024 : 1;
     return sum + (sizeValue * unit);
   }, 0);
 
