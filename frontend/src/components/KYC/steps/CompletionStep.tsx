@@ -30,6 +30,7 @@ import axios from 'axios';
 interface CompletionStepProps {
   applicationId: string;
   application: any;
+  onNext: () => void;
   onBack: () => void;
   onError: (error: string) => void;
   loading: boolean;
@@ -49,6 +50,7 @@ interface FinalResult {
 const CompletionStep: React.FC<CompletionStepProps> = ({
   applicationId,
   application,
+  onNext,
   onBack,
   onError,
   loading,
@@ -345,9 +347,9 @@ const CompletionStep: React.FC<CompletionStepProps> = ({
             variant="contained"
             size="large"
             sx={{ minWidth: 200 }}
-            onClick={() => window.location.href = '/dashboard'}
+            onClick={onNext}
           >
-            Go to Dashboard
+            Continue to Funding
           </Button>
         )}
 

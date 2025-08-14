@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import Footer from './Footer';
 
 const drawerWidth = 240;
 
@@ -49,23 +50,38 @@ export default function Layout({ children }: LayoutProps) {
 
   // Dynamic menu items based on user role
   const getMenuItems = () => {
-    const baseItems = [
-      { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-      { text: 'Models', icon: <TrendingUp />, path: '/models' },
-      { text: 'Community', icon: <People />, path: '/community' },
-      { text: 'Backtesting', icon: <Assessment />, path: '/backtesting' },
-      { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
-      { text: 'Data Management', icon: <Storage />, path: '/data' },
-      { text: 'Account Verification', icon: <VerifiedUser />, path: '/kyc' },
-    ];
-
-    // Add admin panel for admin users
-    if (user?.role === 'admin') {
-      baseItems.push({ text: 'Admin Panel', icon: <AdminPanelSettings />, path: '/admin' });
+    const userRole = user?.role || 'customer';
+    
+    if (userRole === 'admin') {
+      return [
+        { text: 'System Overview', icon: <Dashboard />, path: '/dashboard' },
+        { text: 'User Management', icon: <People />, path: '/admin' },
+        { text: 'Security', icon: <VerifiedUser />, path: '/admin' },
+        { text: 'System Settings', icon: <Settings />, path: '/settings' },
+      ];
     }
-
-    baseItems.push({ text: 'Settings', icon: <Settings />, path: '/settings' });
-    return baseItems;
+    
+    if (userRole === 'trader') {
+      return [
+        { text: 'Trading Center', icon: <Dashboard />, path: '/dashboard' },
+        { text: 'Models & Algorithms', icon: <TrendingUp />, path: '/models' },
+        { text: 'Advanced Backtesting', icon: <Assessment />, path: '/backtesting' },
+        { text: 'Live Portfolio', icon: <AccountBalance />, path: '/portfolio' },
+        { text: 'Market Data', icon: <Storage />, path: '/data' },
+        { text: 'Risk Management', icon: <VerifiedUser />, path: '/risk' },
+        { text: 'Settings', icon: <Settings />, path: '/settings' },
+      ];
+    }
+    
+    // Customer role (default)
+    return [
+      { text: 'My Dashboard', icon: <Dashboard />, path: '/dashboard' },
+      { text: 'AI Insights', icon: <TrendingUp />, path: '/insights' },
+      { text: 'My Portfolio', icon: <AccountBalance />, path: '/portfolio' },
+      { text: 'Paper Trading', icon: <Assessment />, path: '/backtesting' },
+      { text: 'Learning Hub', icon: <People />, path: '/community' },
+      { text: 'Account Settings', icon: <Settings />, path: '/settings' },
+    ];
   };
 
   const handleDrawerToggle = () => {
@@ -141,7 +157,9 @@ export default function Layout({ children }: LayoutProps) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            AI-Powered Quantitative Trading Platform
+            {user?.role === 'admin' ? 'System Administration Portal' :
+             user?.role === 'trader' ? 'Professional Trading Platform' :
+             'AI-Powered Investment Platform'}
           </Typography>
           <IconButton
             size="large"
@@ -217,14 +235,18 @@ export default function Layout({ children }: LayoutProps) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           mt: 8,
           backgroundColor: 'background.default',
           minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        {children}
+        <Box sx={{ flexGrow: 1, p: 3 }}>
+          {children}
+        </Box>
+        <Footer />
       </Box>
     </Box>
   );
