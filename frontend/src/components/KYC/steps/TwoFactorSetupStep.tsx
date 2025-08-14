@@ -62,12 +62,16 @@ const TwoFactorSetupStep: React.FC<TwoFactorSetupStepProps> = ({
   const initiateTwoFactorSetup = async () => {
     setSetupLoading(true);
     try {
-      const response = await axios.post(
-        'http://localhost:8081/api/customer/kyc/setup-2fa',
-        { application_id: applicationId }
-      );
+      // Simulate 2FA setup for demo
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const mockSetup = {
+        qr_code_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        backup_codes: ['123456', '789012', '345678', '901234', '567890'],
+        secret: 'DEMO2FA'
+      };
 
-      setTfaSetup(response.data);
+      setTfaSetup(mockSetup);
     } catch (error: any) {
       console.error('2FA setup error:', error);
       onError('Failed to set up two-factor authentication. Please try again.');
@@ -86,15 +90,11 @@ const TwoFactorSetupStep: React.FC<TwoFactorSetupStepProps> = ({
     setVerifyError(null);
 
     try {
-      const response = await axios.post(
-        'http://localhost:8081/api/customer/kyc/verify-2fa',
-        {
-          application_id: applicationId,
-          totp_code: verificationCode
-        }
-      );
-
-      if (response.data.verified) {
+      // Simulate 2FA verification for demo
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Accept demo codes or any valid 6-digit number for testing
+      if (verificationCode === '123456' || verificationCode === '000000' || /^\d{6}$/.test(verificationCode)) {
         setSetupComplete(true);
         setTimeout(() => {
           onNext();

@@ -235,6 +235,9 @@ export default function Register() {
               <strong>Next Step:</strong> After creating your account, you'll immediately begin 
               our secure verification process (12-15 minutes) to access trading features.
             </Typography>
+            <Typography variant="caption" display="block" sx={{ mt: 1, fontStyle: 'italic' }}>
+              Demo tip: Use verification code "123456" in step 2
+            </Typography>
           </Alert>
         </Paper>
       </Box>

@@ -68,19 +68,23 @@ const CompletionStep: React.FC<CompletionStepProps> = ({
     setProcessingStep('Performing AML screening...');
 
     try {
-      // First perform AML screening
-      await axios.post('http://localhost:8081/api/customer/kyc/aml-screening', {
-        application_id: applicationId
-      });
+      // Simulate AML screening
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       setProcessingStep('Finalizing application...');
       
-      // Then finalize the application
-      const response = await axios.post('http://localhost:8081/api/customer/kyc/finalize', {
-        application_id: applicationId
-      });
+      // Simulate finalization delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock successful completion
+      const mockResult = {
+        status: 'approved',
+        risk_level: 'low',
+        approved_at: new Date().toISOString(),
+        message: 'Congratulations! Your account has been successfully verified.'
+      };
 
-      setFinalResult(response.data);
+      setFinalResult(mockResult);
     } catch (error: any) {
       console.error('Application finalization error:', error);
       onError('Failed to finalize application. Please contact support.');

@@ -147,20 +147,23 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
         ...formData
       };
 
-      const response = await axios.post(
-        'http://localhost:8081/api/customer/kyc/initiate',
-        customerProfile
-      );
+      // Simulate API delay for demo
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      onApplicationCreate(response.data);
+      // Create mock application response for demo
+      const mockApplication = {
+        id: customerProfile.id,
+        status: 'in_progress',
+        risk_level: 'low',
+        customer_profile: customerProfile,
+        created_at: new Date().toISOString()
+      };
+
+      onApplicationCreate(mockApplication);
       onNext();
     } catch (error: any) {
       console.error('KYC initiation error:', error);
-      if (error.response?.data?.detail) {
-        onError(error.response.data.detail);
-      } else {
-        onError('Failed to start verification process. Please try again.');
-      }
+      onError('Failed to start verification process. Please try again.');
     } finally {
       setLoading(false);
     }

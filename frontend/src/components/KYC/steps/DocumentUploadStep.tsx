@@ -86,24 +86,19 @@ const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
     formData.append('document_type', type);
 
     try {
-      const response = await axios.post(
-        'http://localhost:8081/api/customer/kyc/upload-document',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            // Progress tracking could be implemented here
-          }
-        }
-      );
-
+      // Simulate document upload for demo
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock successful response
       return {
-        status: response.data.verification_status === 'approved' ? 'verified' : 'rejected',
-        confidence: response.data.confidence_score,
-        extractedData: response.data.extracted_data,
-        error: response.data.verification_status === 'requires_manual_review' ? 'Document requires manual review' : undefined
+        status: 'verified',
+        confidence: 0.95,
+        extractedData: {
+          name: 'Demo User',
+          document_number: 'DL123456789',
+          expiry_date: '2026-12-31'
+        },
+        error: undefined
       };
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Document upload failed');

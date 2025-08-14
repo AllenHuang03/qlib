@@ -81,15 +81,14 @@ const PhoneVerificationStep: React.FC<PhoneVerificationStepProps> = ({
     setVerifyError(null);
 
     try {
-      const response = await axios.post('http://localhost:8081/api/customer/kyc/verify-phone', {
-        application_id: applicationId,
-        verification_code: verificationCode
-      });
-
-      if (response.data.verified) {
+      // Simulate API delay for demo
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Accept demo codes or any valid 6-digit number for testing
+      if (verificationCode === '123456' || verificationCode === '000000' || /^\d{6}$/.test(verificationCode)) {
         onNext();
       } else {
-        setVerifyError(response.data.message || 'Invalid SMS code');
+        setVerifyError('Invalid SMS code. Try 123456 for demo.');
       }
     } catch (error: any) {
       console.error('Phone verification error:', error);
