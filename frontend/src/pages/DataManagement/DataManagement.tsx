@@ -114,16 +114,10 @@ export default function DataManagement() {
 
   const handleDownload = async (dataset: Dataset) => {
     try {
-      const response = await fetch(`/api/data/datasets/${dataset.id}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
-        }
-      });
+      const blob = await dataAPI.downloadDataset(dataset.id);
       
-      if (response.ok) {
+      if (blob) {
         // Create download link
-        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';

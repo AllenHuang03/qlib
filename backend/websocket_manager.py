@@ -210,7 +210,9 @@ class WebSocketManager:
                     'timestamp': datetime.now().isoformat()
                 }
                 
-                asyncio.create_task(self.broadcast('market', market_data))
+                # Log market data instead of broadcasting from thread
+                if self.connections.get('market'):
+                    logger.info(f"Market data ready for {len(self.connections['market'])} connections")
                 time.sleep(30)  # Update every 30 seconds
                 
             except Exception as e:
@@ -226,12 +228,8 @@ class WebSocketManager:
                                   if v['status'] == 'training'}
                 
                 if active_trainings:
-                    asyncio.create_task(self.broadcast('system', {
-                        'type': 'system_status',
-                        'active_trainings': len(active_trainings),
-                        'message': f"{len(active_trainings)} models currently training",
-                        'timestamp': datetime.now().isoformat()
-                    }))
+                    # Log training status instead of broadcasting from thread
+                    logger.info(f"Training status: {len(active_trainings)} models currently training")
                 
                 time.sleep(5)  # Check every 5 seconds
                 
@@ -243,10 +241,13 @@ class WebSocketManager:
         """Stop tracking a model's training"""
         if model_id in self.model_progress:
             self.model_progress[model_id]['status'] = 'stopped'
-            asyncio.create_task(self.broadcast('training', {
-                'type': 'training_stopped',
-                'model_id': model_id,
-                'status': 'stopped',
+            # Log training stopped instead of broadcasting from sync method
+            logger.info(f'Training stopped for model {model_id}')
+            # Note: Broadcasting should be handled by async endpoints
+            # self.broadcast('training', {
+            #     'type': 'training_stopped',
+            #     'model_id': model_id,
+            #     'status': 'stopped',
                 'timestamp': datetime.now().isoformat()
             }))
     

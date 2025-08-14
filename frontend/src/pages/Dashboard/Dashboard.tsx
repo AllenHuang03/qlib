@@ -31,7 +31,7 @@ import {
   SwapHoriz,
   Psychology,
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AIInsightsModal from '../../components/AIInsights/AIInsightsModal';
 import { aiAPI, dashboardAPI, portfolioAPI, modelsAPI } from '../../services/api';
@@ -466,7 +466,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.text.primary, 0.1)} />
                   <XAxis dataKey="date" />
                   <YAxis tickFormatter={(value) => `$${(value/1000).toFixed(0)}K`} />
-                  <Tooltip 
+                  <RechartsTooltip 
                     formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
                     labelFormatter={(label) => mockPerformanceData.find(d => d.date === label)?.month}
                   />

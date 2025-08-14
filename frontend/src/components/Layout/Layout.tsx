@@ -28,6 +28,7 @@ import {
   Logout,
   People,
   AdminPanelSettings,
+  VerifiedUser,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
@@ -55,6 +56,7 @@ export default function Layout({ children }: LayoutProps) {
       { text: 'Backtesting', icon: <Assessment />, path: '/backtesting' },
       { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
       { text: 'Data Management', icon: <Storage />, path: '/data' },
+      { text: 'Account Verification', icon: <VerifiedUser />, path: '/kyc' },
     ];
 
     // Add admin panel for admin users

@@ -435,7 +435,91 @@ async def duplicate_model(model_id: str):
             return {"message": "Model duplicated successfully", "model": new_model.dict()}
     raise HTTPException(status_code=404, detail="Model not found")
 
-# AI Signals API
+@app.get("/api/models/{model_id}/predictions")
+async def get_model_predictions(model_id: str):
+    """Get predictions from a specific model"""
+    if QLIB_SERVICE_AVAILABLE:
+        try:
+            predictions = qlib_service.get_predictions(model_id)
+            if predictions:
+                return predictions
+        except Exception as e:
+            print(f"Error getting predictions from Qlib service: {e}")
+    
+    # Fallback to mock predictions
+    mock_predictions = [
+        {
+            "symbol": "CBA.AX",
+            "signal": "BUY",
+            "confidence": 0.85,
+            "target_price": 115.50,
+            "current_price": 110.50,
+            "timestamp": datetime.datetime.now().isoformat()
+        },
+        {
+            "symbol": "BHP.AX", 
+            "signal": "HOLD",
+            "confidence": 0.72,
+            "target_price": 47.20,
+            "current_price": 45.20,
+            "timestamp": datetime.datetime.now().isoformat()
+        },
+        {
+            "symbol": "CSL.AX",
+            "signal": "SELL",
+            "confidence": 0.78,
+            "target_price": 285.00,
+            "current_price": 295.50,
+            "timestamp": datetime.datetime.now().isoformat()
+        },
+        {
+            "symbol": "WBC.AX",
+            "signal": "BUY",
+            "confidence": 0.81,
+            "target_price": 26.80,
+            "current_price": 25.20,
+            "timestamp": datetime.datetime.now().isoformat()
+        },
+        {
+            "symbol": "TLS.AX",
+            "signal": "HOLD",
+            "confidence": 0.68,
+            "target_price": 4.15,
+            "current_price": 4.05,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    ]
+    
+    return mock_predictions
+
+# Authentication API
+@app.post("/api/auth/login")
+async def login(request: Request):
+    """Handle user login"""
+    try:
+        body = await request.json()
+        email = body.get("email", "")
+        password = body.get("password", "")
+        
+        # Simple demo authentication
+        if email and password:
+            return {
+                "token": "demo-auth-token-12345",
+                "user": {
+                    "id": "user-1",
+                    "email": email,
+                    "name": "Demo User",
+                    "subscription": "pro"
+                },
+                "message": "Login successful"
+            }
+        else:
+            raise HTTPException(status_code=400, detail="Invalid credentials")
+            
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Login failed")
+
+# AI Signals API  
 @app.get("/api/signals")
 async def get_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX"):
     """Get AI trading signals for symbols"""
@@ -453,6 +537,11 @@ async def get_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX"):
         signals.append(signal)
     
     return signals
+
+@app.get("/api/ai/signals")
+async def get_ai_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX"):
+    """Get AI trading signals for symbols (alternative endpoint)"""
+    return await get_signals(symbols)
 
 # Market Data API
 @app.get("/api/market/quote/{symbol}")

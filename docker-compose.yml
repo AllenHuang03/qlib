@@ -1,1 +1,113 @@
 version: '3.8'
+
+services:
+  # API Gateway - Entry point with authentication and routing
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - CUSTOMER_SERVICE_URL=http://customer-service:8081
+      - TRADING_SERVICE_URL=http://trading-engine:8082
+    depends_on:
+      - customer-service
+      - trading-engine
+    networks:
+      - qlib-network
+
+  # Customer Service - Public-facing API
+  customer-service:
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - USER_DB_URL=postgresql://qlib_user:qlib_pass@user-db:5432/qlib_users
+    depends_on:
+      - user-db
+    networks:
+      - qlib-network
+
+  # Trading Engine - Internal quantitative system
+  trading-engine:
+    build:
+      context: ./trading-engine
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - MARKET_DB_URL=postgresql://qlib_market:qlib_pass@market-db:5432/qlib_market
+      - TRADE_DB_URL=postgresql://qlib_trade:qlib_pass@trade-db:5432/qlib_trades
+      - ALPHA_VANTAGE_KEY=${ALPHA_VANTAGE_KEY:-YR3O8FBCPDC5IVEX}
+    depends_on:
+      - market-db
+      - trade-db
+      - redis
+    networks:
+      - qlib-network
+
+  # User Database - Customer accounts and portfolios
+  user-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=qlib_users
+      - POSTGRES_USER=qlib_user
+      - POSTGRES_PASSWORD=qlib_pass
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - qlib-network
+
+  # Market Database - High-frequency market data (TimescaleDB)
+  market-db:
+    image: timescale/timescaledb:latest-pg15
+    environment:
+      - POSTGRES_DB=qlib_market
+      - POSTGRES_USER=qlib_market
+      - POSTGRES_PASSWORD=qlib_pass
+    volumes:
+      - market_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - qlib-network
+
+  # Trade Database - Orders and executions
+  trade-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=qlib_trades
+      - POSTGRES_USER=qlib_trade
+      - POSTGRES_PASSWORD=qlib_pass
+    volumes:
+      - trade_db_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - qlib-network
+
+  # Redis - Message queue and caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - qlib-network
+
+volumes:
+  user_db_data:
+  market_db_data:
+  trade_db_data:
+  redis_data:
+
+networks:
+  qlib-network:
+    driver: bridge

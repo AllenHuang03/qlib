@@ -49,14 +49,16 @@ api.interceptors.response.use(
     if (response.data) {
       // Ensure arrays exist for list endpoints - with null safety
       const url = response.config?.url || '';
-      if (url.includes('/quotes') && !response.data.quotes) {
-        response.data.quotes = [];
-      }
-      if (url.includes('/datasets') && !response.data.datasets) {
-        response.data.datasets = [];
-      }
-      if (url.includes('/signals') && !response.data.signals) {
-        response.data.signals = [];
+      if (url && typeof url === 'string') {
+        if (url.includes('/quotes') && !response.data.quotes) {
+          response.data.quotes = [];
+        }
+        if (url.includes('/datasets') && !response.data.datasets) {
+          response.data.datasets = [];
+        }
+        if (url.includes('/signals') && !response.data.signals) {
+          response.data.signals = [];
+        }
       }
       
       // Ensure strings are never null - with null safety
@@ -433,6 +435,18 @@ export const dataAPI = {
         message: "Refresh failed - using cached data", 
         status: "error" 
       };
+    }
+  },
+
+  downloadDataset: async (datasetId: string): Promise<Blob> => {
+    try {
+      const response = await api.get(`/data/datasets/${datasetId}/download`, {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error downloading dataset:', error);
+      throw error;
     }
   },
 };
