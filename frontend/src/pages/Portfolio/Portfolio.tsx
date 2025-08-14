@@ -213,8 +213,8 @@ export default function Portfolio() {
     if (hasData) {
       handleRefreshPortfolio();
     } else {
-      // Show demo data by default so import/export functionality is visible
-      setHoldings(mockHoldings);
+      // Start with empty portfolio for new users
+      setHoldings([]);
     }
   }, []);
 

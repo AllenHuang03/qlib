@@ -98,55 +98,47 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
     }
   }, [user, isVerified]);
 
-  const allocationData = [
+  // Only show allocation data for users with initialized portfolios
+  const allocationData = user?.portfolio_initialized ? [
     { name: 'Australian Equities', value: 45, color: '#2196f3' },
     { name: 'International Equities', value: 30, color: '#4caf50' },
     { name: 'Bonds', value: 15, color: '#ff9800' },
     { name: 'Cash', value: 10, color: '#9e9e9e' }
+  ] : [
+    { name: 'No holdings yet', value: 100, color: '#e0e0e0' }
   ];
 
-  const performanceData = [
+  // Only show performance data for users with initialized portfolios
+  const performanceData = user?.portfolio_initialized ? [
     { month: 'Jul', value: 42500 },
     { month: 'Aug', value: 43200 },
     { month: 'Sep', value: 44800 },
     { month: 'Oct', value: 46200 },
     { month: 'Nov', value: 47832 }
+  ] : [
+    { month: 'Now', value: 0 }
   ];
 
+  // Show verification status for unverified users
   if (!isVerified) {
-    // Check if verification is in progress vs not started
     const verificationInProgress = user?.kyc_status === 'pending' || user?.kyc_status === 'in_progress';
     
     return (
       <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
         {/* Verification Status */}
-        <Alert severity={verificationInProgress ? "info" : "warning"} sx={{ mb: 3 }}>
+        <Alert severity="info" sx={{ mb: 3 }}>
           <Typography variant="h6" gutterBottom>
-            {verificationInProgress ? "Verification in Progress" : "Account Verification Required"}
+            Verification in Progress – Expected Up to 2 Days
           </Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            {verificationInProgress 
-              ? "Your account verification is being processed. This typically takes 12-24 hours. You'll receive an email notification once complete."
-              : "Complete your identity verification to access your investment dashboard and AI-powered features."
-            }
+            Your account verification is being processed. This typically takes 12-48 hours. You'll receive an email notification once complete.
           </Typography>
-          {!verificationInProgress && (
-            <Button
-              variant="contained"
-              onClick={onStartKYC}
-              startIcon={<PlayArrow />}
-            >
-              Start Verification Process
-            </Button>
-          )}
-          {verificationInProgress && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <LinearProgress sx={{ flexGrow: 1, height: 8, borderRadius: 4 }} />
-              <Typography variant="body2" color="text.secondary">
-                Processing...
-              </Typography>
-            </Box>
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <LinearProgress sx={{ flexGrow: 1, height: 8, borderRadius: 4 }} />
+            <Typography variant="body2" color="text.secondary">
+              Processing...
+            </Typography>
+          </Box>
         </Alert>
 
         {/* Demo Mode Features */}
