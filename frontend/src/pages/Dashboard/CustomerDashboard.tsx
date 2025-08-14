@@ -118,7 +118,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
     const verificationInProgress = user?.kyc_status === 'pending' || user?.kyc_status === 'in_progress';
     
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
         {/* Verification Status */}
         <Alert severity={verificationInProgress ? "info" : "warning"} sx={{ mb: 3 }}>
           <Typography variant="h6" gutterBottom>
@@ -197,7 +197,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
       {/* Welcome Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
@@ -231,7 +231,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
 
       <Grid container spacing={3}>
         {/* Portfolio Overview */}
-        <Grid item xs={12} lg={8}>
+        <Grid item xs={12} lg={9}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -331,7 +331,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
         </Grid>
 
         {/* AI Insights & Actions */}
-        <Grid item xs={12} lg={4}>
+        <Grid item xs={12} lg={3}>
           {/* AI Insights */}
           <Card sx={{ mb: 3 }}>
             <CardContent>

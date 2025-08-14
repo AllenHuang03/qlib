@@ -150,7 +150,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
