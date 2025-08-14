@@ -134,19 +134,22 @@ const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
       );
 
       const result = await uploadDocument(file, documentType);
+      console.log('Document upload result:', result);
       
       // Update with results
-      setUploadedDocuments(prev => 
-        prev.map(doc => 
+      setUploadedDocuments(prev => {
+        const updatedDocs = prev.map(doc => 
           doc === newDocument ? { 
             ...doc, 
-            status: result.status as any,
+            status: result.status === 'verified' ? 'verified' : 'rejected',
             confidence: result.confidence,
             extractedData: result.extractedData,
             error: result.error
           } : doc
-        )
-      );
+        );
+        console.log('Updated documents:', updatedDocs);
+        return updatedDocs;
+      });
 
     } catch (error: any) {
       setUploadedDocuments(prev => 
@@ -181,6 +184,8 @@ const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
 
   const hasVerifiedDocument = uploadedDocuments.some(doc => doc.status === 'verified');
   const canProceed = hasVerifiedDocument && !loading;
+  
+  console.log('Document check:', { uploadedDocuments, hasVerifiedDocument, canProceed, loading });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
