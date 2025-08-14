@@ -89,9 +89,9 @@ const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
       // Simulate document upload for demo
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Mock successful response
-      return {
-        status: 'verified',
+      // Mock successful response - force verified status
+      const result = {
+        status: 'verified' as const,
         confidence: 0.95,
         extractedData: {
           name: 'Demo User',
@@ -100,6 +100,9 @@ const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
         },
         error: undefined
       };
+      
+      console.log('Mock document result:', result);
+      return result;
     } catch (error: any) {
       throw new Error(error.response?.data?.detail || 'Document upload failed');
     }
@@ -138,15 +141,19 @@ const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({
       
       // Update with results
       setUploadedDocuments(prev => {
-        const updatedDocs = prev.map(doc => 
-          doc === newDocument ? { 
-            ...doc, 
-            status: result.status === 'verified' ? 'verified' : 'rejected',
-            confidence: result.confidence,
-            extractedData: result.extractedData,
-            error: result.error
-          } : doc
-        );
+        const updatedDocs = prev.map(doc => {
+          if (doc === newDocument) {
+            console.log('Updating document status to verified for demo');
+            return { 
+              ...doc, 
+              status: 'verified' as const, // Force verified for demo
+              confidence: result.confidence,
+              extractedData: result.extractedData,
+              error: result.error
+            };
+          }
+          return doc;
+        });
         console.log('Updated documents:', updatedDocs);
         return updatedDocs;
       });
