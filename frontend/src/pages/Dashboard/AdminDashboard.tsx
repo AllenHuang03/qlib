@@ -31,14 +31,14 @@ import {
   Security,
   People,
   Storage,
-  Monitoring,
+  Analytics,
   Warning,
   CheckCircle,
   Error,
   Settings,
   Refresh,
   CloudUpload,
-  Database,
+  Storage,
   Api,
   NetworkCheck
 } from '@mui/icons-material';
@@ -189,7 +189,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         <Grid item xs={12} md={2}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <Database sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
+              <Storage sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
               <Typography variant="h6">{systemHealth.database}%</Typography>
               <Typography variant="body2" color="text.secondary">
                 Database
@@ -470,7 +470,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     </ListItem>
                     <ListItem>
                       <ListItemIcon>
-                        <Monitoring />
+                        <Analytics />
                       </ListItemIcon>
                       <ListItemText 
                         primary="Real-time Monitoring"
