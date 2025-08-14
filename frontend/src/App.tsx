@@ -17,6 +17,7 @@ import AdminDashboard from './pages/Admin/AdminDashboard';
 import Upgrade from './pages/Upgrade/Upgrade';
 import KYCWizard from './components/KYC/KYCWizard';
 import RoleTester from './components/Testing/RoleTester';
+import PlanSelection from './pages/PlanSelection/PlanSelection';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -76,6 +77,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/upgrade" element={<Upgrade />} />
           <Route path="/kyc" element={<KYCWizard />} />
+          <Route path="/plan-selection" element={<PlanSelection />} />
           <Route path="/role-tester" element={<RoleTester />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

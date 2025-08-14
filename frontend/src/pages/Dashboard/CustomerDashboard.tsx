@@ -40,42 +40,63 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
   const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    // Mock data - in production, fetch from API
-    setPortfolioData({
-      totalValue: 47832.50,
-      cashBalance: 2450.00,
-      totalReturn: 8.5,
-      dayChange: 1.2,
-      dayChangeValue: 580.40
-    });
-
-    setAiInsights([
-      {
-        type: 'opportunity',
-        title: 'Banking Sector Momentum',
-        description: 'CBA and WBC showing strong technical patterns. Consider 5-10% allocation.',
-        confidence: 85,
-        impact: 'Medium'
-      },
-      {
-        type: 'warning',
-        title: 'Tech Sector Volatility',
-        description: 'Technology stocks experiencing increased volatility. Review position sizing.',
-        confidence: 92,
-        impact: 'High'
-      },
-      {
-        type: 'rebalance',
-        title: 'Portfolio Rebalancing',
-        description: 'Your allocation has drifted from target. Suggested rebalancing available.',
-        confidence: 78,
-        impact: 'Medium'
-      }
-    ]);
-
-    // Check if user is verified
+    // Check if user is verified and has initialized portfolio
     setIsVerified(user?.kyc_status === 'approved');
-  }, [user]);
+    
+    if (isVerified && user?.portfolio_initialized) {
+      // Show existing portfolio data
+      setPortfolioData({
+        totalValue: 47832.50,
+        cashBalance: 2450.00,
+        totalReturn: 8.5,
+        dayChange: 1.2,
+        dayChangeValue: 580.40
+      });
+
+      setAiInsights([
+        {
+          type: 'opportunity',
+          title: 'Banking Sector Momentum',
+          description: 'CBA and WBC showing strong technical patterns. Consider 5-10% allocation.',
+          confidence: 85,
+          impact: 'Medium'
+        },
+        {
+          type: 'warning',
+          title: 'Tech Sector Volatility',
+          description: 'Technology stocks experiencing increased volatility. Review position sizing.',
+          confidence: 92,
+          impact: 'High'
+        },
+        {
+          type: 'rebalance',
+          title: 'Portfolio Rebalancing',
+          description: 'Your allocation has drifted from target. Suggested rebalancing available.',
+          confidence: 78,
+          impact: 'Medium'
+        }
+      ]);
+    } else if (isVerified) {
+      // New verified user - blank portfolio
+      setPortfolioData({
+        totalValue: 0,
+        cashBalance: 0,
+        totalReturn: 0,
+        dayChange: 0,
+        dayChangeValue: 0
+      });
+
+      setAiInsights([
+        {
+          type: 'opportunity',
+          title: 'Welcome to Qlib Pro!',
+          description: 'Add funds to your account to start receiving personalized AI investment insights.',
+          confidence: 100,
+          impact: 'High'
+        }
+      ]);
+    }
+  }, [user, isVerified]);
 
   const allocationData = [
     { name: 'Australian Equities', value: 45, color: '#2196f3' },
@@ -164,12 +185,33 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
       {/* Welcome Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Welcome back, {user?.name || 'Investor'}
+          {user?.portfolio_initialized ? `Welcome back, ${user?.name || 'Investor'}` : `Welcome to Qlib Pro, ${user?.name || 'Investor'}!`}
         </Typography>
         <Typography variant="h6" color="text.secondary">
-          Your AI-powered investment dashboard
+          {user?.portfolio_initialized ? 'Your AI-powered investment dashboard' : 'Let\'s get your investment journey started'}
         </Typography>
       </Box>
+
+      {/* New User Onboarding */}
+      {isVerified && !user?.portfolio_initialized && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            🎉 Account Verified Successfully!
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Your verification is complete and you're subscribed to the <strong>{user?.subscription_tier?.toUpperCase()} plan</strong>. 
+            Ready to start your AI-powered investment journey?
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+            <Button variant="contained" startIcon={<AccountBalance />}>
+              Add Funds to Start Investing
+            </Button>
+            <Button variant="outlined" startIcon={<School />}>
+              Take the Tutorial
+            </Button>
+          </Box>
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {/* Portfolio Overview */}

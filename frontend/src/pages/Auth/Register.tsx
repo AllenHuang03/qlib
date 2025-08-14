@@ -13,6 +13,7 @@ import {
 import { TrendingUp } from '@mui/icons-material';
 import { useAuthStore } from '../../store/authStore';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import KYCModal from '../../components/KYC/KYCModal';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -23,8 +24,9 @@ export default function Register() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const { register } = useAuthStore();
+  const [showKYC, setShowKYC] = useState(false);
+  const [registeredUser, setRegisteredUser] = useState<any>(null);
+  const { setUser } = useAuthStore();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,7 +40,6 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess('');
 
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
@@ -54,62 +55,103 @@ export default function Register() {
     }
 
     try {
-      const success = await register(formData.email, formData.password, formData.name);
-      if (success) {
-        setSuccess('Registration successful! Please check your email to verify your account.');
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
-      } else {
-        setError('Registration failed. Please try again.');
-      }
-    } catch (err) {
+      // Create new user account (simplified - in production use real API)
+      const newUser = {
+        id: `user_${Date.now()}`,
+        name: formData.name,
+        email: formData.email,
+        role: 'customer', // Default role
+        kyc_status: 'pending',
+        created_at: new Date().toISOString(),
+        subscription_tier: null,
+        portfolio_initialized: false
+      };
+
+      setRegisteredUser(newUser);
+      setLoading(false);
+      setShowKYC(true); // Start KYC immediately after successful registration
+    } catch (error) {
       setError('Registration failed. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
+
+  const handleKYCComplete = (userRole: 'customer' | 'trader') => {
+    // Update user with KYC completion and selected role
+    const completedUser = {
+      ...registeredUser,
+      role: userRole,
+      kyc_status: 'approved'
+    };
+    
+    setUser(completedUser);
+    setShowKYC(false);
+    
+    // Store auth token for the session
+    localStorage.setItem('auth-token', 'verified-user-token');
+    
+    // Navigate to plan selection instead of dashboard
+    navigate('/plan-selection');
+  };
+
+  const handleKYCClose = () => {
+    // If user closes KYC without completing, they can't proceed
+    setShowKYC(false);
+    setError('Account verification is required to access the platform. Please complete the verification process.');
+  };
+
+  if (showKYC) {
+    return (
+      <KYCModal
+        open={showKYC}
+        onClose={handleKYCClose}
+        onComplete={handleKYCComplete}
+      />
+    );
+  }
 
   return (
     <Container component="main" maxWidth="sm">
       <Box
         sx={{
-          minHeight: '100vh',
+          marginTop: 8,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
-        <Paper elevation={6} sx={{ p: 4, borderRadius: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <TrendingUp sx={{ fontSize: 32, color: 'primary.main', mr: 1 }} />
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-                Qlib Pro
-              </Typography>
-            </Box>
-            <Typography variant="h5" component="h2" color="text.secondary" textAlign="center">
-              Create Your Account
-            </Typography>
-            <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-              Start your AI-powered trading journey
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <TrendingUp sx={{ mr: 1, fontSize: 32, color: 'primary.main' }} />
+            <Typography component="h1" variant="h4" color="primary" fontWeight="bold">
+              Qlib Pro
             </Typography>
           </Box>
+          
+          <Typography component="h2" variant="h5" sx={{ mb: 1 }}>
+            Create Your Account
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+            Join thousands of investors using AI-powered quantitative trading
+          </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
             <TextField
               margin="normal"
               required
@@ -162,24 +204,38 @@ export default function Register() {
               onChange={handleChange}
               disabled={loading}
             />
+            
             <Button
               type="submit"
               fullWidth
               variant="contained"
+              size="large"
               sx={{ mt: 3, mb: 2, py: 1.5 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Create Account'}
+              {loading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  Creating Account...
+                </Box>
+              ) : (
+                'Create Account & Start Verification'
+              )}
             </Button>
-            <Box textAlign="center">
-              <Typography variant="body2" color="text.secondary">
-                Already have an account?{' '}
-                <Link component={RouterLink} to="/login" underline="hover">
-                  Sign in
-                </Link>
-              </Typography>
+
+            <Box sx={{ textAlign: 'center' }}>
+              <Link component={RouterLink} to="/login" variant="body2">
+                Already have an account? Sign in
+              </Link>
             </Box>
           </Box>
+
+          <Alert severity="info" sx={{ mt: 3, width: '100%' }}>
+            <Typography variant="body2">
+              <strong>Next Step:</strong> After creating your account, you'll immediately begin 
+              our secure verification process (12-15 minutes) to access trading features.
+            </Typography>
+          </Alert>
         </Paper>
       </Box>
     </Container>

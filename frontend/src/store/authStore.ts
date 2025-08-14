@@ -6,8 +6,10 @@ interface User {
   email: string;
   name: string;
   role: string;
+  kyc_status?: string;
   status?: string;
   subscription_tier?: string;
+  portfolio_initialized?: boolean;
   paper_trading?: boolean;
 }
 
@@ -140,8 +142,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             id: 'demo-user-1',
             email: 'demo@qlib.com',
             name: 'Demo User',
-            role: 'user',
-            subscription_tier: 'free',
+            role: 'customer',
+            kyc_status: 'approved',
+            subscription_tier: 'pro',
+            portfolio_initialized: true,
             paper_trading: true
           };
           

@@ -29,7 +29,8 @@
       "Bash(railway --version)",
       "WebFetch(domain:qlib-production-b7f5.up.railway.app)",
       "Bash(git reset:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(start http://localhost:5173)"
     ],
     "deny": []
   }
