@@ -69,8 +69,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           id: 'demo-user-1',
           email: 'demo@qlib.com',
           name: 'Demo User',
-          role: 'user',
-          subscription_tier: 'free',
+          role: 'customer',
+          kyc_status: 'approved',
+          subscription_tier: 'pro',
+          portfolio_initialized: false, // Start with blank portfolio
           paper_trading: true
         };
         
@@ -145,7 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             role: 'customer',
             kyc_status: 'approved',
             subscription_tier: 'pro',
-            portfolio_initialized: true,
+            portfolio_initialized: false, // Start with blank portfolio
             paper_trading: true
           };
           

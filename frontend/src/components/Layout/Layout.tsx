@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Drawer,
   AppBar,
   Toolbar,
-  List,
   Typography,
-  Divider,
   IconButton,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   Avatar,
   Menu,
   MenuItem,
+  ListItemIcon,
+  Button,
+  Stack,
+  useMediaQuery,
+  useTheme,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -27,14 +30,11 @@ import {
   AccountCircle,
   Logout,
   People,
-  AdminPanelSettings,
   VerifiedUser,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import Footer from './Footer';
-
-const drawerWidth = 240;
 
 
 interface LayoutProps {
@@ -42,11 +42,13 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Dynamic menu items based on user role
   const getMenuItems = () => {
@@ -64,36 +66,35 @@ export default function Layout({ children }: LayoutProps) {
     if (userRole === 'trader') {
       return [
         { text: 'Trading Center', icon: <Dashboard />, path: '/dashboard' },
-        { text: 'Models & Algorithms', icon: <TrendingUp />, path: '/models' },
-        { text: 'Advanced Backtesting', icon: <Assessment />, path: '/backtesting' },
-        { text: 'Live Portfolio', icon: <AccountBalance />, path: '/portfolio' },
-        { text: 'Market Data', icon: <Storage />, path: '/data' },
-        { text: 'Risk Management', icon: <VerifiedUser />, path: '/risk' },
+        { text: 'Models', icon: <TrendingUp />, path: '/models' },
+        { text: 'Backtesting', icon: <Assessment />, path: '/backtesting' },
+        { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
+        { text: 'Data', icon: <Storage />, path: '/data' },
         { text: 'Settings', icon: <Settings />, path: '/settings' },
       ];
     }
     
     // Customer role (default)
     return [
-      { text: 'My Dashboard', icon: <Dashboard />, path: '/dashboard' },
+      { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
       { text: 'AI Insights', icon: <TrendingUp />, path: '/insights' },
-      { text: 'My Portfolio', icon: <AccountBalance />, path: '/portfolio' },
+      { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
       { text: 'Paper Trading', icon: <Assessment />, path: '/backtesting' },
       { text: 'Learning Hub', icon: <People />, path: '/community' },
-      { text: 'Account Settings', icon: <Settings />, path: '/settings' },
+      { text: 'Settings', icon: <Settings />, path: '/settings' },
     ];
   };
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  const handleMobileMenuToggle = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+    setProfileMenuAnchor(event.currentTarget);
   };
 
   const handleProfileMenuClose = () => {
-    setAnchorEl(null);
+    setProfileMenuAnchor(null);
   };
 
   const handleLogout = () => {
@@ -101,30 +102,34 @@ export default function Layout({ children }: LayoutProps) {
     handleProfileMenuClose();
   };
 
-  const drawer = (
-    <div>
-      <Toolbar>
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
+  };
+
+  // Mobile menu drawer content
+  const mobileMenuDrawer = (
+    <Box sx={{ width: 250, pt: 2 }}>
+      <Box sx={{ px: 2, pb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <TrendingUp color="primary" />
-          <Typography variant="h6" noWrap component="div" color="primary" fontWeight="bold">
+          <Typography variant="h6" color="primary" fontWeight="bold">
             Qlib Pro
           </Typography>
         </Box>
-      </Toolbar>
-      <Divider />
+      </Box>
       <List>
         {getMenuItems().map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
               selected={location.pathname.startsWith(item.path)}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigation(item.path)}
               sx={{
                 '&.Mui-selected': {
                   backgroundColor: 'primary.light',
                   color: 'primary.contrastText',
-                  '& .MuiListItemIcon-root': {
-                    color: 'primary.contrastText',
-                  },
                 },
               }}
             >
@@ -134,47 +139,73 @@ export default function Layout({ children }: LayoutProps) {
           </ListItem>
         ))}
       </List>
-    </div>
+    </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {/* Top Navigation Bar */}
+      <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {user?.role === 'admin' ? 'System Administration Portal' :
-             user?.role === 'trader' ? 'Professional Trading Platform' :
-             'AI-Powered Investment Platform'}
-          </Typography>
+          {/* Logo */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 4 }}>
+            <TrendingUp />
+            <Typography variant="h6" noWrap component="div" fontWeight="bold">
+              Qlib Pro
+            </Typography>
+          </Box>
+
+          {/* Desktop Navigation */}
+          {!isMobile && (
+            <Stack direction="row" spacing={1} sx={{ flexGrow: 1 }}>
+              {getMenuItems().map((item) => (
+                <Button
+                  key={item.text}
+                  color="inherit"
+                  startIcon={item.icon}
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    backgroundColor: location.pathname.startsWith(item.path) 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : 'transparent',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    },
+                  }}
+                >
+                  {item.text}
+                </Button>
+              ))}
+            </Stack>
+          )}
+
+          {/* Mobile menu button */}
+          {isMobile && (
+            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-end', mr: 2 }}>
+              <IconButton
+                color="inherit"
+                aria-label="open menu"
+                onClick={handleMobileMenuToggle}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Box>
+          )}
+
+          {/* User Profile Menu */}
           <IconButton
             size="large"
             aria-label="account of current user"
-            aria-controls="primary-search-account-menu"
-            aria-haspopup="true"
             onClick={handleProfileMenuOpen}
             color="inherit"
           >
-            <Avatar sx={{ width: 32, height: 32 }}>
+            <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
               {user?.name?.charAt(0) || 'U'}
             </Avatar>
           </IconButton>
+
           <Menu
-            anchorEl={anchorEl}
+            anchorEl={profileMenuAnchor}
             anchorOrigin={{
               vertical: 'bottom',
               horizontal: 'right',
@@ -184,7 +215,7 @@ export default function Layout({ children }: LayoutProps) {
               vertical: 'top',
               horizontal: 'right',
             }}
-            open={Boolean(anchorEl)}
+            open={Boolean(profileMenuAnchor)}
             onClose={handleProfileMenuClose}
           >
             <MenuItem onClick={handleProfileMenuClose}>
@@ -202,43 +233,23 @@ export default function Layout({ children }: LayoutProps) {
           </Menu>
         </Toolbar>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
       >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
+        {mobileMenuDrawer}
+      </Drawer>
+
+      {/* Main Content Area */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
+          pt: 8, // Account for fixed header
           backgroundColor: 'background.default',
-          minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -246,6 +257,8 @@ export default function Layout({ children }: LayoutProps) {
         <Box sx={{ flexGrow: 1, p: 3 }}>
           {children}
         </Box>
+        
+        {/* Full-width Footer */}
         <Footer />
       </Box>
     </Box>

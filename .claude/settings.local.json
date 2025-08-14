@@ -30,7 +30,8 @@
       "WebFetch(domain:qlib-production-b7f5.up.railway.app)",
       "Bash(git reset:*)",
       "Bash(mkdir:*)",
-      "Bash(start http://localhost:5173)"
+      "Bash(start http://localhost:5173)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

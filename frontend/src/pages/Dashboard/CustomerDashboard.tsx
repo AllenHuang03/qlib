@@ -114,23 +114,39 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
   ];
 
   if (!isVerified) {
+    // Check if verification is in progress vs not started
+    const verificationInProgress = user?.kyc_status === 'pending' || user?.kyc_status === 'in_progress';
+    
     return (
       <Box sx={{ p: 3 }}>
-        {/* Verification Required */}
-        <Alert severity="warning" sx={{ mb: 3 }}>
+        {/* Verification Status */}
+        <Alert severity={verificationInProgress ? "info" : "warning"} sx={{ mb: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Account Verification Required
+            {verificationInProgress ? "Verification in Progress" : "Account Verification Required"}
           </Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            Complete your identity verification to access your investment dashboard and AI-powered features.
+            {verificationInProgress 
+              ? "Your account verification is being processed. This typically takes 12-24 hours. You'll receive an email notification once complete."
+              : "Complete your identity verification to access your investment dashboard and AI-powered features."
+            }
           </Typography>
-          <Button
-            variant="contained"
-            onClick={onStartKYC}
-            startIcon={<PlayArrow />}
-          >
-            Start Verification Process
-          </Button>
+          {!verificationInProgress && (
+            <Button
+              variant="contained"
+              onClick={onStartKYC}
+              startIcon={<PlayArrow />}
+            >
+              Start Verification Process
+            </Button>
+          )}
+          {verificationInProgress && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <LinearProgress sx={{ flexGrow: 1, height: 8, borderRadius: 4 }} />
+              <Typography variant="body2" color="text.secondary">
+                Processing...
+              </Typography>
+            </Box>
+          )}
         </Alert>
 
         {/* Demo Mode Features */}

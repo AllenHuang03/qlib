@@ -32,10 +32,12 @@ const Footer: React.FC = () => {
         backgroundColor: 'grey.900',
         color: 'white',
         py: 6,
-        mt: 'auto'
+        mt: 'auto',
+        width: '100%',
+        position: 'relative'
       }}
     >
-      <Container maxWidth="lg">
+      <Box sx={{ maxWidth: 'lg', mx: 'auto', px: 3 }}>
         <Grid container spacing={4}>
           {/* Company Info */}
           <Grid item xs={12} md={3}>
@@ -231,7 +233,7 @@ const Footer: React.FC = () => {
             Qlib Pro Pty Ltd is regulated by ASIC and complies with Australian financial services laws.
           </Typography>
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 };
