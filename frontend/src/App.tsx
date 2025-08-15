@@ -21,7 +21,6 @@ import PlanSelection from './pages/PlanSelection/PlanSelection';
 import PaperTrading from './pages/PaperTrading/PaperTrading';
 import TraderAgents from './pages/TraderAgents/TraderAgents';
 import TradingEnvironment from './pages/Trading/TradingEnvironment';
-import DebugLayout from './pages/DebugLayout/DebugLayout';
 import AIInsights from './pages/AIInsights/AIInsights';
 import AboutUs from './pages/Legal/AboutUs';
 import ContactUs from './pages/Legal/ContactUs';
@@ -77,9 +76,8 @@ function App() {
 
   // Authenticated routes
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Layout>
-        <Routes>
+    <Layout>
+      <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/landing" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -96,7 +94,6 @@ function App() {
           <Route path="/paper-trading" element={<PaperTrading />} />
           <Route path="/trader-agents" element={<TraderAgents />} />
           <Route path="/trading-environment" element={<TradingEnvironment />} />
-          <Route path="/debug-layout" element={<DebugLayout />} />
           <Route path="/insights" element={<AIInsights />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
@@ -106,8 +103,7 @@ function App() {
           <Route path="/role-tester" element={<RoleTester />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </Layout>
-    </Box>
+    </Layout>
   );
 }
 

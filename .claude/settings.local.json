@@ -31,7 +31,8 @@
       "Bash(git reset:*)",
       "Bash(mkdir:*)",
       "Bash(start http://localhost:5173)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(start http://localhost:3004/debug-layout)"
     ],
     "deny": []
   }

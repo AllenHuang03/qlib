@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   AppBar,
@@ -18,7 +18,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Dashboard,
@@ -31,11 +31,10 @@ import {
   Logout,
   People,
   VerifiedUser,
-} from '@mui/icons-material';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import Footer from './Footer';
-
+} from "@mui/icons-material";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
+import Footer from "./Footer";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -43,46 +42,51 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
+  const [profileMenuAnchor, setProfileMenuAnchor] =
+    useState<null | HTMLElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // Dynamic menu items based on user role
   const getMenuItems = () => {
-    const userRole = user?.role || 'customer';
-    
-    if (userRole === 'admin') {
+    const userRole = user?.role || "customer";
+
+    if (userRole === "admin") {
       return [
-        { text: 'System Overview', icon: <Dashboard />, path: '/dashboard' },
-        { text: 'User Management', icon: <People />, path: '/admin' },
-        { text: 'Security', icon: <VerifiedUser />, path: '/admin' },
-        { text: 'System Settings', icon: <Settings />, path: '/settings' },
+        { text: "System Overview", icon: <Dashboard />, path: "/dashboard" },
+        { text: "User Management", icon: <People />, path: "/admin" },
+        { text: "Security", icon: <VerifiedUser />, path: "/admin" },
+        { text: "System Settings", icon: <Settings />, path: "/settings" },
       ];
     }
-    
-    if (userRole === 'trader') {
+
+    if (userRole === "trader") {
       return [
-        { text: 'Trading Center', icon: <Dashboard />, path: '/dashboard' },
-        { text: 'Trading Environment', icon: <Assessment />, path: '/trading-environment' },
-        { text: 'Trader Agents', icon: <People />, path: '/trader-agents' },
-        { text: 'Models', icon: <TrendingUp />, path: '/models' },
-        { text: 'Backtesting', icon: <Assessment />, path: '/backtesting' },
-        { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
-        { text: 'Data', icon: <Storage />, path: '/data' },
-        { text: 'Settings', icon: <Settings />, path: '/settings' },
+        { text: "Trading Center", icon: <Dashboard />, path: "/dashboard" },
+        {
+          text: "Trading Environment",
+          icon: <Assessment />,
+          path: "/trading-environment",
+        },
+        { text: "Trader Agents", icon: <People />, path: "/trader-agents" },
+        { text: "Models", icon: <TrendingUp />, path: "/models" },
+        { text: "Backtesting", icon: <Assessment />, path: "/backtesting" },
+        { text: "Portfolio", icon: <AccountBalance />, path: "/portfolio" },
+        { text: "Data", icon: <Storage />, path: "/data" },
+        { text: "Settings", icon: <Settings />, path: "/settings" },
       ];
     }
-    
+
     // Customer role (default) - simplified navigation, hide advanced features
     return [
-      { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-      { text: 'AI Insights', icon: <TrendingUp />, path: '/insights' },
-      { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
-      { text: 'Paper Trading', icon: <Assessment />, path: '/paper-trading' },
-      { text: 'Learning Hub', icon: <People />, path: '/community' },
+      { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
+      { text: "AI Insights", icon: <TrendingUp />, path: "/insights" },
+      { text: "Portfolio", icon: <AccountBalance />, path: "/portfolio" },
+      { text: "Paper Trading", icon: <Assessment />, path: "/paper-trading" },
+      { text: "Learning Hub", icon: <People />, path: "/community" },
     ];
   };
 
@@ -114,7 +118,7 @@ export default function Layout({ children }: LayoutProps) {
   const mobileMenuDrawer = (
     <Box sx={{ width: 250, pt: 2 }}>
       <Box sx={{ px: 2, pb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <TrendingUp color="primary" />
           <Typography variant="h6" color="primary" fontWeight="bold">
             Qlib Pro
@@ -128,9 +132,9 @@ export default function Layout({ children }: LayoutProps) {
               selected={location.pathname.startsWith(item.path)}
               onClick={() => handleNavigation(item.path)}
               sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.light',
-                  color: 'primary.contrastText',
+                "&.Mui-selected": {
+                  backgroundColor: "primary.light",
+                  color: "primary.contrastText",
                 },
               }}
             >
@@ -144,12 +148,12 @@ export default function Layout({ children }: LayoutProps) {
   );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       {/* Top Navigation Bar */}
       <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
           {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 4 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mr: 4 }}>
             <TrendingUp />
             <Typography variant="h6" noWrap component="div" fontWeight="bold">
               Qlib Pro
@@ -166,11 +170,11 @@ export default function Layout({ children }: LayoutProps) {
                   startIcon={item.icon}
                   onClick={() => navigate(item.path)}
                   sx={{
-                    backgroundColor: location.pathname.startsWith(item.path) 
-                      ? 'rgba(255, 255, 255, 0.1)' 
-                      : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backgroundColor: location.pathname.startsWith(item.path)
+                      ? "rgba(255, 255, 255, 0.1)"
+                      : "transparent",
+                    "&:hover": {
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
                     },
                   }}
                 >
@@ -182,7 +186,14 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Mobile menu button */}
           {isMobile && (
-            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-end', mr: 2 }}>
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                justifyContent: "flex-end",
+                mr: 2,
+              }}
+            >
               <IconButton
                 color="inherit"
                 aria-label="open menu"
@@ -200,21 +211,21 @@ export default function Layout({ children }: LayoutProps) {
             onClick={handleProfileMenuOpen}
             color="inherit"
           >
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-              {user?.name?.charAt(0) || 'U'}
+            <Avatar sx={{ width: 32, height: 32, bgcolor: "secondary.main" }}>
+              {user?.name?.charAt(0) || "U"}
             </Avatar>
           </IconButton>
 
           <Menu
             anchorEl={profileMenuAnchor}
             anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
+              vertical: "bottom",
+              horizontal: "right",
             }}
             keepMounted
             transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
+              vertical: "top",
+              horizontal: "right",
             }}
             open={Boolean(profileMenuAnchor)}
             onClose={handleProfileMenuClose}
@@ -250,33 +261,28 @@ export default function Layout({ children }: LayoutProps) {
         sx={{
           flexGrow: 1,
           pt: 8, // Account for fixed header
-          backgroundColor: 'background.default',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
+          backgroundColor: "background.default",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
         }}
       >
         {/* Centered Content Container */}
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             flexGrow: 1,
-            display: 'flex',
-            justifyContent: 'center', // Center the content horizontally
-            width: '100%',
+            maxWidth: "1200px", // Max width constraint
+            width: "100%", // Take available width up to max
+            margin: "0 auto", // Center the container
+            paddingLeft: { xs: 2, sm: 3 }, // Responsive padding
+            paddingRight: { xs: 2, sm: 3 }, // Responsive padding
+            paddingTop: 3,
+            paddingBottom: 3,
           }}
         >
-          <Box 
-            sx={{ 
-              width: '100%',
-              maxWidth: '1200px', // Max width of 1200px
-              px: { xs: 2, sm: 3 }, // Responsive padding
-              py: 3,
-            }}
-          >
-            {children}
-          </Box>
+          {children}
         </Box>
-        
+
         {/* Full-width Footer */}
         <Footer />
       </Box>
