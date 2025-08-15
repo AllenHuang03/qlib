@@ -66,6 +66,7 @@ export default function Layout({ children }: LayoutProps) {
     if (userRole === 'trader') {
       return [
         { text: 'Trading Center', icon: <Dashboard />, path: '/dashboard' },
+        { text: 'Trader Agents', icon: <People />, path: '/trader-agents' },
         { text: 'Models', icon: <TrendingUp />, path: '/models' },
         { text: 'Backtesting', icon: <Assessment />, path: '/backtesting' },
         { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
@@ -74,14 +75,13 @@ export default function Layout({ children }: LayoutProps) {
       ];
     }
     
-    // Customer role (default)
+    // Customer role (default) - simplified navigation, hide advanced features
     return [
       { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
       { text: 'AI Insights', icon: <TrendingUp />, path: '/insights' },
       { text: 'Portfolio', icon: <AccountBalance />, path: '/portfolio' },
-      { text: 'Paper Trading', icon: <Assessment />, path: '/backtesting' },
+      { text: 'Paper Trading', icon: <Assessment />, path: '/paper-trading' },
       { text: 'Learning Hub', icon: <People />, path: '/community' },
-      { text: 'Settings', icon: <Settings />, path: '/settings' },
     ];
   };
 
@@ -254,7 +254,7 @@ export default function Layout({ children }: LayoutProps) {
           flexDirection: 'column',
         }}
       >
-        <Box sx={{ flexGrow: 1, p: 3 }}>
+        <Box sx={{ flexGrow: 1 }}>
           {children}
         </Box>
         

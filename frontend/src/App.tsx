@@ -18,6 +18,9 @@ import Upgrade from './pages/Upgrade/Upgrade';
 import KYCWizard from './components/KYC/KYCWizard';
 import RoleTester from './components/Testing/RoleTester';
 import PlanSelection from './pages/PlanSelection/PlanSelection';
+import PaperTrading from './pages/PaperTrading/PaperTrading';
+import TraderAgents from './pages/TraderAgents/TraderAgents';
+import AIInsights from './pages/AIInsights/AIInsights';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -78,6 +81,9 @@ function App() {
           <Route path="/upgrade" element={<Upgrade />} />
           <Route path="/kyc" element={<KYCWizard />} />
           <Route path="/plan-selection" element={<PlanSelection />} />
+          <Route path="/paper-trading" element={<PaperTrading />} />
+          <Route path="/trader-agents" element={<TraderAgents />} />
+          <Route path="/insights" element={<AIInsights />} />
           <Route path="/role-tester" element={<RoleTester />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
