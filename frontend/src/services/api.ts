@@ -49,7 +49,7 @@ api.interceptors.response.use(
     if (response.data) {
       // Ensure arrays exist for list endpoints - with null safety
       const url = response.config?.url || '';
-      if (url && typeof url === 'string') {
+      if (url && typeof url === 'string' && url.length > 0) {
         if (url.includes('/quotes') && !response.data.quotes) {
           response.data.quotes = [];
         }
@@ -58,6 +58,12 @@ api.interceptors.response.use(
         }
         if (url.includes('/signals') && !response.data.signals) {
           response.data.signals = [];
+        }
+        if (url.includes('/trading/agents') && !response.data.agents) {
+          response.data.agents = [];
+        }
+        if (url.includes('/trading/activity') && !response.data.activity) {
+          response.data.activity = [];
         }
       }
       
