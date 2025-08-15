@@ -256,18 +256,25 @@ export default function Layout({ children }: LayoutProps) {
           minHeight: '100vh',
         }}
       >
-        {/* Centered Content Wrapper */}
+        {/* Centered Content Container */}
         <Box 
           sx={{ 
             flexGrow: 1,
-            maxWidth: 1200, // 1200px max width
+            display: 'flex',
+            justifyContent: 'center', // Center the content horizontally
             width: '100%',
-            margin: '0 auto', // Center horizontally
-            px: { xs: 2, sm: 3 }, // Responsive padding
-            py: 3,
           }}
         >
-          {children}
+          <Box 
+            sx={{ 
+              width: '100%',
+              maxWidth: '1200px', // Max width of 1200px
+              px: { xs: 2, sm: 3 }, // Responsive padding
+              py: 3,
+            }}
+          >
+            {children}
+          </Box>
         </Box>
         
         {/* Full-width Footer */}

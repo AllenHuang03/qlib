@@ -37,7 +37,7 @@ import {
 } from '@mui/material';
 import { TrendingUp, TrendingDown, Refresh, AccountBalance, CloudUpload, Visibility, Security, TrendingUp as GrowthIcon, Add, GetApp, Link as LinkIcon, CloudSync, Description, FileCopy } from '@mui/icons-material';
 import { portfolioAPI, marketAPI } from '../../services/api';
-import { CircularProgress, Snackbar, Alert } from '@mui/material';
+import { CircularProgress, Snackbar } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 interface Holding {
