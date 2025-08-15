@@ -198,7 +198,7 @@ export default function AIInsights() {
   ];
 
   return (
-    <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
+    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>

@@ -422,7 +422,7 @@ const Community: React.FC = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
           Community
