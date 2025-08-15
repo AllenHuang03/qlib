@@ -21,6 +21,11 @@ import PlanSelection from './pages/PlanSelection/PlanSelection';
 import PaperTrading from './pages/PaperTrading/PaperTrading';
 import TraderAgents from './pages/TraderAgents/TraderAgents';
 import AIInsights from './pages/AIInsights/AIInsights';
+import AboutUs from './pages/Legal/AboutUs';
+import ContactUs from './pages/Legal/ContactUs';
+import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
+import TermsOfService from './pages/Legal/TermsOfService';
+import FAQ from './pages/Support/FAQ';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -33,7 +38,7 @@ function App() {
   }, [initializeAuth]);
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/', '/landing', '/register', '/login'];
+  const publicRoutes = ['/', '/landing', '/register', '/login', '/about', '/contact', '/privacy', '/terms', '/faq'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
 
   // Show loading while initializing auth to prevent flash
@@ -59,6 +64,11 @@ function App() {
         <Route path="/landing" element={<Landing />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/faq" element={<FAQ />} />
       </Routes>
     );
   }
@@ -84,6 +94,11 @@ function App() {
           <Route path="/paper-trading" element={<PaperTrading />} />
           <Route path="/trader-agents" element={<TraderAgents />} />
           <Route path="/insights" element={<AIInsights />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/role-tester" element={<RoleTester />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
