@@ -26,6 +26,14 @@ except ImportError:
     print("Qlib service not available, using fallback")
     QLIB_SERVICE_AVAILABLE = False
 
+# Import Market Data service
+try:
+    from market_data_service import market_data_service
+    MARKET_DATA_SERVICE_AVAILABLE = True
+except ImportError:
+    print("Market data service not available, using fallback")
+    MARKET_DATA_SERVICE_AVAILABLE = False
+
 # Import WebSocket manager
 try:
     from websocket_manager import websocket_manager
@@ -543,44 +551,134 @@ async def get_ai_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX"):
     """Get AI trading signals for symbols (alternative endpoint)"""
     return await get_signals(symbols)
 
-# Market Data API
+# Enhanced Market Data API
+@app.get("/api/market/quotes")
+async def get_quotes(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,ANZ.AX"):
+    """Get real-time market quotes for multiple symbols"""
+    if MARKET_DATA_SERVICE_AVAILABLE:
+        try:
+            symbol_list = symbols.split(",")
+            quotes_data = await market_data_service.get_realtime_quotes(symbol_list)
+            return quotes_data
+        except Exception as e:
+            print(f"Error using market data service: {e}")
+    
+    # Fallback to original implementation
+    symbol_list = symbols.split(",")
+    quotes = []
+    
+    for symbol in symbol_list:
+        quotes.append(MarketQuote(
+            symbol=symbol.strip(),
+            price=round(random.uniform(50, 300), 2),
+            change=round(random.uniform(-5, 5), 2),
+            change_percent=round(random.uniform(-3, 3), 2),
+            volume=random.randint(100000, 5000000),
+            last_updated=datetime.datetime.now().isoformat()
+        ))
+    
+    return {"quotes": quotes, "total": len(quotes), "market": "ASX"}
+
 @app.get("/api/market/quote/{symbol}")
 async def get_quote(symbol: str):
-    """Get real-time market quote"""
-    try:
-        # Try to get real data from Alpha Vantage
-        url = f"https://www.alphavantage.co/query"
-        params = {
-            "function": "GLOBAL_QUOTE",
-            "symbol": symbol,
-            "apikey": ALPHA_VANTAGE_KEY
-        }
-        
-        response = requests.get(url, params=params, timeout=5)
-        data = response.json()
-        
-        if "Global Quote" in data:
-            quote_data = data["Global Quote"]
-            return MarketQuote(
-                symbol=symbol,
-                price=float(quote_data.get("05. price", 0)),
-                change=float(quote_data.get("09. change", 0)),
-                change_percent=float(quote_data.get("10. change percent", "0%").replace("%", "")),
-                volume=int(float(quote_data.get("06. volume", 0))),
-                last_updated=quote_data.get("07. latest trading day", "")
-            )
-    except Exception as e:
-        print(f"Error fetching real data for {symbol}: {e}")
+    """Get real-time market quote for a single symbol"""
+    quotes_data = await get_quotes(symbol)
+    quotes = quotes_data.get("quotes", [])
     
-    # Fallback to mock data
-    return MarketQuote(
-        symbol=symbol,
-        price=round(random.uniform(50, 300), 2),
-        change=round(random.uniform(-5, 5), 2),
-        change_percent=round(random.uniform(-3, 3), 2),
-        volume=random.randint(100000, 5000000),
-        last_updated=datetime.date.today().isoformat()
-    )
+    if quotes:
+        return quotes[0]
+    else:
+        # Fallback
+        return MarketQuote(
+            symbol=symbol,
+            price=round(random.uniform(50, 300), 2),
+            change=round(random.uniform(-5, 5), 2),
+            change_percent=round(random.uniform(-3, 3), 2),
+            volume=random.randint(100000, 5000000),
+            last_updated=datetime.datetime.now().isoformat()
+        )
+
+@app.get("/api/market/historical/{symbol}")
+async def get_historical_data(symbol: str, period: str = "1y"):
+    """Get historical price data"""
+    if MARKET_DATA_SERVICE_AVAILABLE:
+        try:
+            return await market_data_service.get_historical_data(symbol, period)
+        except Exception as e:
+            print(f"Error getting historical data: {e}")
+    
+    # Fallback mock data
+    import numpy as np
+    days = {'1d': 1, '5d': 5, '1mo': 30, '3mo': 90, '6mo': 180, '1y': 365}
+    num_days = days.get(period, 365)
+    
+    data = []
+    base_price = 100
+    for i in range(num_days):
+        date = datetime.datetime.now() - datetime.timedelta(days=num_days - i)
+        base_price *= (1 + np.random.normal(0, 0.02))
+        
+        data.append({
+            'date': date.strftime('%Y-%m-%d'),
+            'close': round(base_price, 2),
+            'volume': random.randint(100000, 1000000)
+        })
+    
+    return {"symbol": symbol, "period": period, "data": data}
+
+@app.get("/api/market/indices")
+async def get_market_indices():
+    """Get Australian market indices"""
+    if MARKET_DATA_SERVICE_AVAILABLE:
+        try:
+            return await market_data_service.get_market_indices()
+        except Exception as e:
+            print(f"Error getting market indices: {e}")
+    
+    # Fallback mock data
+    indices = [
+        {"symbol": "^AXJO", "name": "ASX 200", "value": 7542.30, "change": 45.2, "change_percent": "0.60%"},
+        {"symbol": "^AXKO", "name": "All Ordinaries", "value": 7798.50, "change": 38.1, "change_percent": "0.49%"}
+    ]
+    return {"indices": indices, "market": "ASX"}
+
+@app.get("/api/market/sectors")
+async def get_sector_performance():
+    """Get sector performance data"""
+    if MARKET_DATA_SERVICE_AVAILABLE:
+        try:
+            return await market_data_service.get_sector_performance()
+        except Exception as e:
+            print(f"Error getting sector performance: {e}")
+    
+    # Fallback mock data
+    sectors = [
+        {"sector": "Financials", "change_percent": 1.2, "top_stocks": ["CBA.AX", "WBC.AX", "ANZ.AX"]},
+        {"sector": "Materials", "change_percent": -0.8, "top_stocks": ["BHP.AX", "RIO.AX", "FMG.AX"]},
+        {"sector": "Healthcare", "change_percent": 0.5, "top_stocks": ["CSL.AX", "COL.AX"]}
+    ]
+    return {"sectors": sectors}
+
+@app.get("/api/market/news")
+async def get_market_news(query: str = "ASX Australian stock market", limit: int = 10):
+    """Get market news"""
+    if MARKET_DATA_SERVICE_AVAILABLE:
+        try:
+            return await market_data_service.get_market_news(query, limit)
+        except Exception as e:
+            print(f"Error getting market news: {e}")
+    
+    # Fallback mock news
+    news = [
+        {
+            "title": "ASX 200 closes higher on banking strength",
+            "summary": "Major banks led gains with strong earnings outlook",
+            "source": "Financial Review",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "sentiment": "positive"
+        }
+    ]
+    return {"news": news[:limit], "total": len(news)}
 
 # Portfolio API
 @app.get("/api/portfolio/holdings", response_model=List[Holding])
@@ -1019,15 +1117,171 @@ async def get_storage_usage(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# Trading Environment API
+@app.get("/api/trading/agents")
+async def get_trading_agents():
+    """Get all active trading agents"""
+    try:
+        from datetime import datetime, timedelta
+        
+        # Mock trading agents data
+        agents = [
+            {
+                "id": "agent-1",
+                "name": "LSTM Alpha Strategy",
+                "model_type": "LSTM",
+                "status": "running",
+                "performance": {
+                    "total_return": 12.5,
+                    "sharpe_ratio": 1.8,
+                    "win_rate": 68.2,
+                    "trades_count": 47
+                },
+                "current_position": {
+                    "symbol": "CBA.AX",
+                    "quantity": 100,
+                    "entry_price": 108.50,
+                    "current_pnl": 275.00
+                },
+                "last_signal": {
+                    "action": "HOLD",
+                    "symbol": "CBA.AX",
+                    "confidence": 0.82,
+                    "timestamp": datetime.now().isoformat()
+                }
+            },
+            {
+                "id": "agent-2", 
+                "name": "LightGBM Multi-Factor",
+                "model_type": "LightGBM",
+                "status": "running",
+                "performance": {
+                    "total_return": 8.7,
+                    "sharpe_ratio": 1.4,
+                    "win_rate": 71.5,
+                    "trades_count": 63
+                },
+                "current_position": {
+                    "symbol": "BHP.AX",
+                    "quantity": 200,
+                    "entry_price": 44.20,
+                    "current_pnl": 360.00
+                },
+                "last_signal": {
+                    "action": "BUY",
+                    "symbol": "RIO.AX",
+                    "confidence": 0.76,
+                    "timestamp": datetime.now().isoformat()
+                }
+            },
+            {
+                "id": "agent-3",
+                "name": "GRU Momentum",
+                "model_type": "GRU",
+                "status": "paused",
+                "performance": {
+                    "total_return": 5.2,
+                    "sharpe_ratio": 1.1,
+                    "win_rate": 64.8,
+                    "trades_count": 31
+                },
+                "current_position": None,
+                "last_signal": {
+                    "action": "SELL",
+                    "symbol": "CSL.AX",
+                    "confidence": 0.69,
+                    "timestamp": (datetime.now() - timedelta(hours=1)).isoformat()
+                }
+            }
+        ]
+        
+        return {
+            "agents": agents,
+            "total": len(agents),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trading/agents/{agent_id}/control")
+async def control_trading_agent(agent_id: str, request: Request):
+    """Control trading agent (start/pause/stop)"""
+    try:
+        body = await request.json()
+        action_type = body.get("action")
+        
+        if action_type not in ["start", "pause", "stop"]:
+            raise HTTPException(status_code=400, detail="Invalid action")
+        
+        # Simulate agent control
+        new_status = "running" if action_type == "start" else action_type + ("ped" if action_type == "stop" else "d")
+        
+        return {
+            "message": f"Agent {action_type}ed successfully",
+            "agent_id": agent_id,
+            "status": new_status,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/trading/activity")
+async def get_trading_activity():
+    """Get recent trading activity"""
+    try:
+        from datetime import datetime, timedelta
+        
+        # Mock trading activity
+        activity = [
+            {
+                "time": "10:45 AM",
+                "agent": "LSTM Alpha",
+                "action": "BUY",
+                "symbol": "CBA.AX",
+                "quantity": 100,
+                "price": 108.50,
+                "timestamp": datetime.now().isoformat()
+            },
+            {
+                "time": "10:32 AM", 
+                "agent": "LightGBM Multi",
+                "action": "SELL",
+                "symbol": "WBC.AX",
+                "quantity": 150,
+                "price": 25.20,
+                "timestamp": (datetime.now() - timedelta(minutes=13)).isoformat()
+            },
+            {
+                "time": "10:18 AM",
+                "agent": "GRU Momentum", 
+                "action": "BUY",
+                "symbol": "BHP.AX",
+                "quantity": 200,
+                "price": 44.20,
+                "timestamp": (datetime.now() - timedelta(minutes=27)).isoformat()
+            }
+        ]
+        
+        return {
+            "activity": activity,
+            "total": len(activity),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     print("Starting Qlib Pro Production API...")
-    print("Documentation: http://localhost:8080/docs")
-    print("Health Check: http://localhost:8080/health")
+    print("Documentation: http://localhost:8001/docs")
+    print("Health Check: http://localhost:8001/health")
     
     uvicorn.run(
         app,
         host="127.0.0.1",
-        port=8080,
+        port=8001,
         reload=False,
         access_log=True
     )

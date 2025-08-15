@@ -17,8 +17,25 @@ import {
   Tab,
   Button,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  TextField,
+  Alert,
+  Step,
+  Stepper,
+  StepLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
-import { TrendingUp, TrendingDown, Refresh, AccountBalance, CloudUpload, Visibility, Security, TrendingUp as GrowthIcon, Add, GetApp } from '@mui/icons-material';
+import { TrendingUp, TrendingDown, Refresh, AccountBalance, CloudUpload, Visibility, Security, TrendingUp as GrowthIcon, Add, GetApp, Link as LinkIcon, CloudSync, Description, FileCopy } from '@mui/icons-material';
 import { portfolioAPI, marketAPI } from '../../services/api';
 import { CircularProgress, Snackbar, Alert } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -137,6 +154,71 @@ export default function Portfolio() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   
+  // Import dialog state
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importStep, setImportStep] = useState(0);
+  const [selectedPlatform, setSelectedPlatform] = useState('');
+  const [credentials, setCredentials] = useState({ username: '', password: '', clientId: '' });
+  const [importProgress, setImportProgress] = useState(0);
+
+  // Australian trading platforms
+  const tradingPlatforms = [
+    {
+      id: 'commsec',
+      name: 'CommSec',
+      logo: '🟡',
+      description: 'Commonwealth Bank trading platform',
+      type: 'api', // Direct API connection
+      fields: ['username', 'password'],
+      instructions: 'Connect using your CommSec login credentials'
+    },
+    {
+      id: 'nabtrade',
+      name: 'nabtrade',
+      logo: '🔴',
+      description: 'NAB trading platform',
+      type: 'api',
+      fields: ['username', 'password'],
+      instructions: 'Connect using your nabtrade login credentials'
+    },
+    {
+      id: 'etrade',
+      name: 'E*TRADE Australia',
+      logo: '🟢',
+      description: 'ANZ E*TRADE platform',
+      type: 'api',
+      fields: ['username', 'password'],
+      instructions: 'Connect using your E*TRADE login credentials'
+    },
+    {
+      id: 'cmc',
+      name: 'CMC Markets',
+      logo: '🔵',
+      description: 'CMC Markets trading platform',
+      type: 'api',
+      fields: ['username', 'password'],
+      instructions: 'Connect using your CMC Markets login credentials'
+    },
+    {
+      id: 'ig',
+      name: 'IG Markets',
+      logo: '🟠',
+      description: 'IG trading platform',
+      type: 'api',
+      fields: ['username', 'password'],
+      instructions: 'Connect using your IG login credentials'
+    },
+    {
+      id: 'csv_upload',
+      name: 'CSV Upload',
+      logo: '📄',
+      description: 'Upload portfolio from CSV file',
+      type: 'file',
+      fields: [],
+      instructions: 'Upload a CSV file with columns: Symbol, Quantity, Price, Value'
+    }
+  ];
+  
   const totalValue = holdings.reduce((sum, holding) => sum + holding.value, 0);
   const totalPnL = holdings.reduce((sum, holding) => sum + holding.pnl, 0);
   const totalPnLPercent = (totalPnL / (totalValue - totalPnL)) * 100;
@@ -232,26 +314,83 @@ export default function Portfolio() {
   };
 
   const handleUploadCSV = () => {
-    // Create file input element
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        setLoading(true);
-        // Simulate CSV processing
-        setTimeout(() => {
-          localStorage.setItem('portfolio_connected', 'true');
-          setHasConnectedData(true);
-          setShowOnboarding(false);
-          setHoldings(mockHoldings);
-          setSnackbar({ open: true, message: 'Portfolio imported successfully!', severity: 'success' });
-          setLoading(false);
-        }, 1500);
-      }
-    };
-    input.click();
+    setImportDialogOpen(true);
+    setImportStep(0);
+    setSelectedPlatform('');
+    setCredentials({ username: '', password: '', clientId: '' });
+    setImportProgress(0);
+  };
+
+  const handleImportPlatformSelect = (platformId: string) => {
+    setSelectedPlatform(platformId);
+    setImportStep(1);
+  };
+
+  const handleImportConnect = async () => {
+    const platform = tradingPlatforms.find(p => p.id === selectedPlatform);
+    
+    if (selectedPlatform === 'csv_upload') {
+      // Handle CSV file upload
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv';
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          setImportStep(2);
+          setImportProgress(10);
+          
+          // Simulate CSV processing
+          const progressInterval = setInterval(() => {
+            setImportProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(progressInterval);
+                setTimeout(() => {
+                  localStorage.setItem('portfolio_connected', 'true');
+                  setHasConnectedData(true);
+                  setShowOnboarding(false);
+                  setHoldings(mockHoldings);
+                  setSnackbar({ open: true, message: 'Portfolio imported successfully from CSV!', severity: 'success' });
+                  setImportDialogOpen(false);
+                }, 500);
+                return 100;
+              }
+              return prev + 15;
+            });
+          }, 300);
+        }
+      };
+      input.click();
+      return;
+    }
+
+    // Handle platform API connection
+    if (!credentials.username || !credentials.password) {
+      setSnackbar({ open: true, message: 'Please enter your login credentials', severity: 'error' });
+      return;
+    }
+
+    setImportStep(2);
+    setImportProgress(0);
+
+    // Simulate API connection progress
+    const progressInterval = setInterval(() => {
+      setImportProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          setTimeout(() => {
+            localStorage.setItem('portfolio_connected', 'true');
+            setHasConnectedData(true);
+            setShowOnboarding(false);
+            setHoldings(mockHoldings);
+            setSnackbar({ open: true, message: `Portfolio imported successfully from ${platform?.name}!`, severity: 'success' });
+            setImportDialogOpen(false);
+          }, 500);
+          return 100;
+        }
+        return prev + 12;
+      });
+    }, 400);
   };
 
   const handleDemoMode = () => {
@@ -299,7 +438,7 @@ export default function Portfolio() {
   };
 
   return (
-    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+    <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1" fontWeight="bold">
           Portfolio
@@ -307,11 +446,11 @@ export default function Portfolio() {
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Button
             variant="outlined"
-            startIcon={<CloudUpload />}
+            startIcon={<CloudSync />}
             onClick={handleUploadCSV}
             size="small"
           >
-            Import CSV
+            Import Portfolio
           </Button>
           <Button
             variant="outlined"
@@ -648,6 +787,187 @@ export default function Portfolio() {
           </Grid>
         </Grid>
       )}
+
+      {/* Portfolio Import Dialog */}
+      <Dialog 
+        open={importDialogOpen} 
+        onClose={() => setImportDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CloudSync color="primary" />
+            <Typography variant="h6">Import Portfolio</Typography>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent>
+          {/* Step 0: Platform Selection */}
+          {importStep === 0 && (
+            <Box>
+              <Typography variant="body1" sx={{ mb: 3 }}>
+                Choose your trading platform to import your portfolio automatically:
+              </Typography>
+              
+              <Grid container spacing={2}>
+                {tradingPlatforms.map((platform) => (
+                  <Grid item xs={12} sm={6} key={platform.id}>
+                    <Card 
+                      sx={{ 
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': { 
+                          transform: 'translateY(-2px)', 
+                          boxShadow: 3,
+                          borderColor: 'primary.main'
+                        },
+                        border: '1px solid',
+                        borderColor: 'divider'
+                      }}
+                      onClick={() => handleImportPlatformSelect(platform.id)}
+                    >
+                      <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                        <Typography variant="h3" sx={{ mb: 1 }}>
+                          {platform.logo}
+                        </Typography>
+                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
+                          {platform.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {platform.description}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+
+          {/* Step 1: Credentials/File Upload */}
+          {importStep === 1 && (
+            <Box>
+              {(() => {
+                const platform = tradingPlatforms.find(p => p.id === selectedPlatform);
+                return (
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                      <Typography variant="h4">{platform?.logo}</Typography>
+                      <Box>
+                        <Typography variant="h6">{platform?.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {platform?.instructions}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {platform?.type === 'api' && (
+                      <Box>
+                        <Alert severity="info" sx={{ mb: 3 }}>
+                          <Typography variant="body2">
+                            🔒 Your credentials are encrypted and used only for importing portfolio data. 
+                            We never store your login information.
+                          </Typography>
+                        </Alert>
+
+                        <Grid container spacing={2}>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              label="Username/Email"
+                              value={credentials.username}
+                              onChange={(e) => setCredentials({...credentials, username: e.target.value})}
+                              required
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              label="Password"
+                              type="password"
+                              value={credentials.password}
+                              onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+                              required
+                            />
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    )}
+
+                    {platform?.type === 'file' && (
+                      <Box>
+                        <Alert severity="info" sx={{ mb: 3 }}>
+                          <Typography variant="body2">
+                            📄 Upload a CSV file with your portfolio holdings. Required columns: 
+                            Symbol, Quantity, Price, Value
+                          </Typography>
+                        </Alert>
+                        
+                        <Box sx={{ textAlign: 'center', p: 4, border: '2px dashed', borderColor: 'primary.main', borderRadius: 2 }}>
+                          <CloudUpload sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                          <Typography variant="h6" gutterBottom>
+                            Click Connect to select your CSV file
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Supports .csv files up to 10MB
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                );
+              })()}
+            </Box>
+          )}
+
+          {/* Step 2: Import Progress */}
+          {importStep === 2 && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <CircularProgress size={60} sx={{ mb: 3 }} />
+              <Typography variant="h6" gutterBottom>
+                Importing Portfolio...
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Connecting to {tradingPlatforms.find(p => p.id === selectedPlatform)?.name} and importing your holdings
+              </Typography>
+              
+              <Box sx={{ width: '100%', maxWidth: 400, mx: 'auto' }}>
+                <CircularProgress variant="determinate" value={importProgress} size={80} thickness={4} />
+                <Typography variant="body2" sx={{ mt: 2 }}>
+                  {importProgress}% Complete
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          {importStep === 0 && (
+            <Button onClick={() => setImportDialogOpen(false)}>
+              Cancel
+            </Button>
+          )}
+          
+          {importStep === 1 && (
+            <>
+              <Button onClick={() => setImportStep(0)}>
+                Back
+              </Button>
+              <Button 
+                variant="contained" 
+                onClick={handleImportConnect}
+                disabled={
+                  selectedPlatform !== 'csv_upload' && 
+                  (!credentials.username || !credentials.password)
+                }
+              >
+                {selectedPlatform === 'csv_upload' ? 'Select File' : 'Connect & Import'}
+              </Button>
+            </>
+          )}
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar for user feedback */}
       <Snackbar

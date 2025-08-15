@@ -200,7 +200,7 @@ export default function Upgrade() {
   };
 
   return (
-    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+    <Box>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography variant={{ xs: 'h4', sm: 'h3' }} fontWeight="bold" sx={{ mb: 2 }}>
           Upgrade to Unlock AI Trading

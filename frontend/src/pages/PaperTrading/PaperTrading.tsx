@@ -194,7 +194,7 @@ export default function PaperTrading() {
   };
 
   return (
-    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+    <Box>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>

@@ -241,15 +241,7 @@ class WebSocketManager:
         """Stop tracking a model's training"""
         if model_id in self.model_progress:
             self.model_progress[model_id]['status'] = 'stopped'
-            # Log training stopped instead of broadcasting from sync method
             logger.info(f'Training stopped for model {model_id}')
-            # Note: Broadcasting should be handled by async endpoints
-            # self.broadcast('training', {
-            #     'type': 'training_stopped',
-            #     'model_id': model_id,
-            #     'status': 'stopped',
-                'timestamp': datetime.now().isoformat()
-            }))
     
     def pause_model_training(self, model_id: str):
         """Pause a model's training"""

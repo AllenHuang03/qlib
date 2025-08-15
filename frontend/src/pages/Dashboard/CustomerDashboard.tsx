@@ -124,7 +124,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
     const verificationInProgress = user?.kyc_status === 'pending' || user?.kyc_status === 'in_progress';
     
     return (
-      <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+      <Box>
         {/* Verification Status */}
         <Alert severity="info" sx={{ mb: 3 }}>
           <Typography variant="h6" gutterBottom>
@@ -189,7 +189,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
   }
 
   return (
-    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+    <Box>
       {/* Welcome Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>

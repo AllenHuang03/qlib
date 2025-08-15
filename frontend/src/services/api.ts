@@ -13,9 +13,9 @@ console.log('🔍 API Configuration Debug:', {
   timestamp: new Date().toISOString()
 });
 
-// Create axios instance
+// Create axios instance  
 const api = axios.create({
-  baseURL: API_BASE_URL ? `${API_BASE_URL}/api` : '/api',
+  baseURL: API_BASE_URL ? `${API_BASE_URL}/api` : 'http://localhost:8001/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -567,6 +567,39 @@ export const aiAPI = {
   getAnalysis: async (symbol: string) => {
     const response = await api.get(`/ai/analysis/${symbol}`);
     return response.data;
+  }
+};
+
+// Trading Environment API
+export const tradingAPI = {
+  getAgents: async () => {
+    try {
+      const response = await api.get('/trading/agents');
+      return response.data || { agents: [], total: 0 };
+    } catch (error) {
+      console.error('Error fetching trading agents:', error);
+      return { agents: [], total: 0 };
+    }
+  },
+
+  controlAgent: async (agentId: string, action: 'start' | 'pause' | 'stop') => {
+    try {
+      const response = await api.post(`/trading/agents/${agentId}/control`, { action });
+      return response.data;
+    } catch (error) {
+      console.error('Error controlling agent:', error);
+      throw error;
+    }
+  },
+
+  getActivity: async () => {
+    try {
+      const response = await api.get('/trading/activity');
+      return response.data || { activity: [], total: 0 };
+    } catch (error) {
+      console.error('Error fetching trading activity:', error);
+      return { activity: [], total: 0 };
+    }
   }
 };
 

@@ -146,7 +146,7 @@ const TraderDashboard: React.FC<TraderDashboardProps> = ({ user, onStartKYC }) =
 
   if (!isVerified) {
     return (
-      <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+      <Box>
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="h6" gutterBottom>
             Professional Account Verification Required
@@ -204,7 +204,7 @@ const TraderDashboard: React.FC<TraderDashboardProps> = ({ user, onStartKYC }) =
   }
 
   return (
-    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+    <Box>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>

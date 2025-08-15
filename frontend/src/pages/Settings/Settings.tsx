@@ -15,7 +15,7 @@ import {
 
 export default function Settings() {
   return (
-    <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
+    <Box>
       <Typography variant="h4" component="h1" fontWeight="bold" sx={{ mb: 3 }}>
         Settings
       </Typography>

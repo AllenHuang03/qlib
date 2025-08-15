@@ -66,6 +66,7 @@ export default function Layout({ children }: LayoutProps) {
     if (userRole === 'trader') {
       return [
         { text: 'Trading Center', icon: <Dashboard />, path: '/dashboard' },
+        { text: 'Trading Environment', icon: <Assessment />, path: '/trading-environment' },
         { text: 'Trader Agents', icon: <People />, path: '/trader-agents' },
         { text: 'Models', icon: <TrendingUp />, path: '/models' },
         { text: 'Backtesting', icon: <Assessment />, path: '/backtesting' },
@@ -254,7 +255,16 @@ export default function Layout({ children }: LayoutProps) {
           flexDirection: 'column',
         }}
       >
-        <Box sx={{ flexGrow: 1 }}>
+        {/* Centered Content Wrapper */}
+        <Box 
+          sx={{ 
+            flexGrow: 1,
+            maxWidth: 'lg', // 1200px
+            mx: 'auto', // Center horizontally
+            width: '100%',
+            p: 3, // Standard padding
+          }}
+        >
           {children}
         </Box>
         
