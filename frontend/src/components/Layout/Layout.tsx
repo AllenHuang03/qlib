@@ -253,16 +253,18 @@ export default function Layout({ children }: LayoutProps) {
           backgroundColor: 'background.default',
           display: 'flex',
           flexDirection: 'column',
+          minHeight: '100vh',
         }}
       >
         {/* Centered Content Wrapper */}
         <Box 
           sx={{ 
             flexGrow: 1,
-            maxWidth: 'lg', // 1200px
-            mx: 'auto', // Center horizontally
+            maxWidth: 1200, // 1200px max width
             width: '100%',
-            p: 3, // Standard padding
+            margin: '0 auto', // Center horizontally
+            px: { xs: 2, sm: 3 }, // Responsive padding
+            py: 3,
           }}
         >
           {children}
