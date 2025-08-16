@@ -47,33 +47,41 @@ api.interceptors.response.use(
     
     // Handle common API response patterns and prevent null errors
     if (response.data) {
-      // Ensure arrays exist for list endpoints - with null safety
-      const url = response.config?.url || '';
+      // Ensure arrays exist for list endpoints - with comprehensive null safety
+      const url = response.config?.url;
       if (url && typeof url === 'string' && url.length > 0) {
-        if (url.includes('/quotes') && !response.data.quotes) {
-          response.data.quotes = [];
-        }
-        if (url.includes('/datasets') && !response.data.datasets) {
-          response.data.datasets = [];
-        }
-        if (url.includes('/signals') && !response.data.signals) {
-          response.data.signals = [];
-        }
-        if (url.includes('/trading/agents') && !response.data.agents) {
-          response.data.agents = [];
-        }
-        if (url.includes('/trading/activity') && !response.data.activity) {
-          response.data.activity = [];
+        try {
+          if (url.includes('/quotes') && !response.data.quotes) {
+            response.data.quotes = [];
+          }
+          if (url.includes('/datasets') && !response.data.datasets) {
+            response.data.datasets = [];
+          }
+          if (url.includes('/signals') && !response.data.signals) {
+            response.data.signals = [];
+          }
+          if (url.includes('/trading/agents') && !response.data.agents) {
+            response.data.agents = [];
+          }
+          if (url.includes('/trading/activity') && !response.data.activity) {
+            response.data.activity = [];
+          }
+        } catch (error) {
+          console.warn('Error processing response data structure:', error);
         }
       }
       
-      // Ensure strings are never null - with null safety
-      if (response.data && typeof response.data === 'object') {
-        Object.keys(response.data).forEach(key => {
-          if (response.data[key] === null) {
-            response.data[key] = '';
-          }
-        });
+      // Ensure strings are never null - with comprehensive null safety
+      if (response.data && typeof response.data === 'object' && response.data !== null) {
+        try {
+          Object.keys(response.data).forEach(key => {
+            if (response.data[key] === null || response.data[key] === undefined) {
+              response.data[key] = '';
+            }
+          });
+        } catch (error) {
+          console.warn('Error sanitizing response data:', error);
+        }
       }
     }
     
@@ -83,10 +91,16 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Only redirect to login if not already on login/register pages
       const currentPath = window.location?.pathname || '';
-      if (currentPath && !currentPath.includes('/login') && !currentPath.includes('/register')) {
-        localStorage.removeItem('auth-token');
-        console.log('🔐 Auth token expired, redirecting to login');
-        window.location.href = '/login';
+      if (currentPath && typeof currentPath === 'string' && currentPath.length > 0) {
+        try {
+          if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+            localStorage.removeItem('auth-token');
+            console.log('🔐 Auth token expired, redirecting to login');
+            window.location.href = '/login';
+          }
+        } catch (pathError) {
+          console.warn('Error checking current path:', pathError);
+        }
       }
     } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
       console.error('🔌 Backend server connection failed');

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box } from '@mui/material';
 
 import Layout from './components/Layout/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Models from './pages/Models/Models';
 import Backtesting from './pages/Backtesting/Backtesting';
@@ -60,7 +61,8 @@ function App() {
   // Public routes
   if (isPublicRoute && !isAuthenticated) {
     return (
-      <Routes>
+      <ErrorBoundary>
+        <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/register" element={<Register />} />
@@ -70,14 +72,16 @@ function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/faq" element={<FAQ />} />
-      </Routes>
+        </Routes>
+      </ErrorBoundary>
     );
   }
 
   // Authenticated routes
   return (
-    <Layout>
-      <Routes>
+    <ErrorBoundary>
+      <Layout>
+        <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/landing" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -103,7 +107,8 @@ function App() {
           <Route path="/role-tester" element={<RoleTester />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-    </Layout>
+      </Layout>
+    </ErrorBoundary>
   );
 }
 

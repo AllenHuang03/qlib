@@ -75,11 +75,13 @@ const TradingEnvironment: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [testMode, setTestMode] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
 
   useEffect(() => {
     initializeEnvironment();
     
-    if (autoRefresh) {
+    if (autoRefresh && consecutiveErrors < 3) {
       const interval = setInterval(() => {
         updateMarketData();
         updateAgentStatus();
@@ -87,10 +89,11 @@ const TradingEnvironment: React.FC = () => {
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh]);
+  }, [autoRefresh, consecutiveErrors]);
 
   const initializeEnvironment = async () => {
     setLoading(true);
+    setError(null);
     try {
       // Get trading agents from API
       const agentsResponse = await tradingAPI.getAgents();
@@ -101,8 +104,13 @@ const TradingEnvironment: React.FC = () => {
       
       // Get trading activity
       await updateTradingActivity();
+      
+      // Reset error count on successful load
+      setConsecutiveErrors(0);
     } catch (error) {
       console.error('Failed to initialize trading environment:', error);
+      setError('Failed to load trading environment. Please check your connection.');
+      setConsecutiveErrors(prev => prev + 1);
     } finally {
       setLoading(false);
     }
@@ -112,8 +120,17 @@ const TradingEnvironment: React.FC = () => {
     try {
       const response = await tradingAPI.getActivity();
       setTradingActivity(response.activity || []);
+      // Reset consecutive errors on successful update
+      if (consecutiveErrors > 0) {
+        setConsecutiveErrors(0);
+        setError(null);
+      }
     } catch (error) {
       console.error('Failed to update trading activity:', error);
+      setConsecutiveErrors(prev => prev + 1);
+      if (consecutiveErrors >= 3) {
+        setError('Trading activity updates temporarily disabled due to connection issues.');
+      }
     }
   };
 
@@ -121,8 +138,17 @@ const TradingEnvironment: React.FC = () => {
     try {
       const response = await marketAPI.getQuotes();
       setMarketData(response.quotes || []);
+      // Reset consecutive errors on successful update
+      if (consecutiveErrors > 0) {
+        setConsecutiveErrors(0);
+        setError(null);
+      }
     } catch (error) {
       console.error('Failed to update market data:', error);
+      setConsecutiveErrors(prev => prev + 1);
+      if (consecutiveErrors >= 3) {
+        setError('Market data updates temporarily disabled due to connection issues.');
+      }
     }
   };
 
@@ -131,8 +157,17 @@ const TradingEnvironment: React.FC = () => {
       // Get fresh agent data from API
       const agentsResponse = await tradingAPI.getAgents();
       setAgents(agentsResponse.agents || []);
+      // Reset consecutive errors on successful update
+      if (consecutiveErrors > 0) {
+        setConsecutiveErrors(0);
+        setError(null);
+      }
     } catch (error) {
       console.error('Failed to update agent status:', error);
+      setConsecutiveErrors(prev => prev + 1);
+      if (consecutiveErrors >= 3) {
+        setError('Agent status updates temporarily disabled due to connection issues.');
+      }
     }
   };
 
@@ -221,6 +256,35 @@ const TradingEnvironment: React.FC = () => {
       {testMode && (
         <Alert severity="info" sx={{ mb: 3 }}>
           Test Mode Enabled - All trades are simulated and no real money is involved
+        </Alert>
+      )}
+
+      {error && (
+        <Alert 
+          severity="warning" 
+          sx={{ mb: 3 }}
+          action={
+            <Button 
+              color="inherit" 
+              size="small" 
+              onClick={() => {
+                setError(null);
+                setConsecutiveErrors(0);
+                initializeEnvironment();
+              }}
+            >
+              Retry
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
+
+      {consecutiveErrors >= 3 && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          Auto-refresh has been disabled due to repeated connection failures. 
+          Click the Refresh button or toggle Auto Refresh to retry.
         </Alert>
       )}
 

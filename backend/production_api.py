@@ -527,6 +527,33 @@ async def login(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail="Login failed")
 
+@app.get("/api/auth/profile")
+async def get_profile(request: Request):
+    """Get user profile"""
+    try:
+        # Extract token from Authorization header
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="No valid token provided")
+        
+        token = auth_header.replace("Bearer ", "")
+        
+        # Simple demo token validation
+        if token and token.strip() and token != "null":
+            return {
+                "id": "user-1",
+                "email": "demo@example.com",
+                "name": "Demo User",
+                "role": "customer",  # or "trader", "admin"
+                "subscription": "pro",
+                "created_at": "2024-01-01T00:00:00Z"
+            }
+        else:
+            raise HTTPException(status_code=401, detail="Invalid token")
+            
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
 # AI Signals API  
 @app.get("/api/signals")
 async def get_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX"):

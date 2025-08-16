@@ -18,7 +18,7 @@ class WebSocketService {
   private reconnectDelay = 3000;
 
   private getWebSocketUrl(endpoint: string): string {
-    const baseUrl = import.meta.env.VITE_API_URL || 'ws://localhost:8080';
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
     const wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
     return `${wsUrl}/ws/${endpoint}`;
   }
@@ -30,6 +30,14 @@ class WebSocketService {
     return new Promise((resolve, reject) => {
       try {
         const url = this.getWebSocketUrl(endpoint);
+        
+        // Check if WebSocket is supported and not blocked by CSP
+        if (typeof WebSocket === 'undefined') {
+          console.warn('WebSocket not supported, falling back to polling');
+          reject(new Error('WebSocket not supported'));
+          return;
+        }
+
         const ws = new WebSocket(url);
 
         ws.onopen = () => {
@@ -60,10 +68,18 @@ class WebSocketService {
 
         ws.onerror = (error) => {
           console.error(`WebSocket error: ${endpoint}`, error);
+          // Check for CSP or security policy violations
+          if (error instanceof Event && error.type === 'error') {
+            console.warn('WebSocket connection blocked (possibly by CSP), falling back to polling');
+          }
           reject(error);
         };
 
       } catch (error) {
+        console.error('WebSocket creation failed:', error);
+        if (error instanceof DOMException && error.name === 'SecurityError') {
+          console.warn('WebSocket blocked by security policy, falling back to polling');
+        }
         reject(error);
       }
     });
