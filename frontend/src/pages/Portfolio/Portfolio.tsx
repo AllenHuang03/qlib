@@ -327,7 +327,7 @@ export default function Portfolio() {
   };
 
   const handleImportConnect = async () => {
-    const platform = tradingPlatforms.find(p => p.id === selectedPlatform);
+    const platform = tradingPlatforms?.find(p => p.id === selectedPlatform);
     
     if (selectedPlatform === 'csv_upload') {
       // Handle CSV file upload
@@ -849,7 +849,7 @@ export default function Portfolio() {
           {importStep === 1 && (
             <Box>
               {(() => {
-                const platform = tradingPlatforms.find(p => p.id === selectedPlatform);
+                const platform = tradingPlatforms?.find(p => p.id === selectedPlatform);
                 return (
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
@@ -929,7 +929,7 @@ export default function Portfolio() {
                 Importing Portfolio...
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Connecting to {tradingPlatforms.find(p => p.id === selectedPlatform)?.name} and importing your holdings
+                Connecting to {tradingPlatforms?.find(p => p.id === selectedPlatform)?.name || 'platform'} and importing your holdings
               </Typography>
               
               <Box sx={{ width: '100%', maxWidth: 400, mx: 'auto' }}>
