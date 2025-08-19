@@ -4,8 +4,8 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Copy backend requirements first for better caching
-COPY backend/requirements.txt .
+# Copy root requirements first for better caching (Railway-optimized)
+COPY requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
