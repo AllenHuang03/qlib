@@ -28,6 +28,7 @@ import {
   Info
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import CustomerJourneyOrchestrator from '../../components/CustomerJourney/CustomerJourneyOrchestrator';
 
 interface CustomerDashboardProps {
   user: any;
@@ -38,10 +39,20 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
   const [portfolioData, setPortfolioData] = useState<any>(null);
   const [aiInsights, setAiInsights] = useState<any[]>([]);
   const [isVerified, setIsVerified] = useState(false);
+  const [showJourneyFlow, setShowJourneyFlow] = useState(false);
 
   useEffect(() => {
     // Check if user is verified and has initialized portfolio
     setIsVerified(user?.kyc_status === 'approved');
+    
+    // Determine if we should show the journey flow
+    const shouldShowJourney = 
+      user?.userType === 'premium_customer' || 
+      user?.userType === 'institutional' ||
+      (user?.userType === 'retail_customer' && user?.kyc_status !== 'approved') ||
+      (user?.userType === 'retail_customer' && user?.kyc_status === 'approved' && !user?.portfolio_initialized);
+    
+    setShowJourneyFlow(shouldShowJourney);
     
     if (isVerified && user?.portfolio_initialized) {
       // Show existing portfolio data
@@ -97,6 +108,17 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
       ]);
     }
   }, [user, isVerified]);
+
+  const handleJourneyComplete = (journeyType: string) => {
+    console.log('Journey completed:', journeyType);
+    setShowJourneyFlow(false);
+    // Refresh user data or redirect as needed
+  };
+
+  // If we should show the journey flow, render it instead of the standard dashboard
+  if (showJourneyFlow) {
+    return <CustomerJourneyOrchestrator onJourneyComplete={handleJourneyComplete} />;
+  }
 
   // Only show allocation data for users with initialized portfolios
   const allocationData = user?.portfolio_initialized ? [

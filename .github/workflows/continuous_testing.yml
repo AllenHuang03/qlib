@@ -1,0 +1,918 @@
+name: Continuous Testing Framework
+# AGENT 5: CONTINUOUS INTEGRATION SPECIALIST
+# Automated CI/CD pipeline for comprehensive testing across all components
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      test_level:
+        description: 'Test Level'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - 'smoke'
+        - 'integration'
+        - 'full'
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.10'
+  BACKEND_URL: 'http://localhost:8000'
+  FRONTEND_URL: 'http://localhost:5173'
+
+jobs:
+  setup-and-validate:
+    name: 🔍 Setup & Environment Validation
+    runs-on: ubuntu-latest
+    outputs:
+      backend-changed: ${{ steps.changes.outputs.backend }}
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      test-level: ${{ steps.test-level.outputs.level }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Detect changes
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          backend:
+            - 'backend/**'
+            - 'qlib/**'
+            - '*.py'
+            - 'requirements.txt'
+          frontend:
+            - 'frontend/**'
+            - 'package*.json'
+
+    - name: Determine test level
+      id: test-level
+      run: |
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          echo "level=full" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "level=${{ github.event.inputs.test_level }}" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "level=integration" >> $GITHUB_OUTPUT
+        else
+          echo "level=smoke" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio requests psutil
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Validate environment
+      run: |
+        python --version
+        node --version
+        npm --version
+        echo "✅ Environment setup complete"
+
+  unit-tests-backend:
+    name: 🧪 Backend Unit Tests
+    runs-on: ubuntu-latest
+    needs: setup-and-validate
+    if: needs.setup-and-validate.outputs.backend-changed == 'true' || contains(fromJSON('["full", "integration"]'), needs.setup-and-validate.outputs.test-level)
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+
+    - name: Run backend unit tests
+      run: |
+        echo "🧪 Running backend unit tests..."
+        python -m pytest tests/ -v --cov=qlib --cov=backend --cov-report=xml --cov-report=html -x
+      continue-on-error: true
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: backend
+        name: backend-coverage
+
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: backend-test-results
+        path: |
+          htmlcov/
+          coverage.xml
+
+  unit-tests-frontend:
+    name: 🎨 Frontend Unit Tests
+    runs-on: ubuntu-latest
+    needs: setup-and-validate
+    if: needs.setup-and-validate.outputs.frontend-changed == 'true' || contains(fromJSON('["full", "integration"]'), needs.setup-and-validate.outputs.test-level)
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Run frontend unit tests
+      working-directory: frontend
+      run: |
+        echo "🎨 Running frontend unit tests..."
+        npm run test -- --coverage --reporter=verbose
+      continue-on-error: true
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        directory: frontend/coverage
+        flags: frontend
+        name: frontend-coverage
+
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: frontend-test-results
+        path: frontend/coverage/
+
+  build-and-deploy-test:
+    name: 🏗️ Build & Deploy Test Environment
+    runs-on: ubuntu-latest
+    needs: [setup-and-validate, unit-tests-backend, unit-tests-frontend]
+    if: always() && (needs.unit-tests-backend.result == 'success' || needs.unit-tests-backend.result == 'skipped') && (needs.unit-tests-frontend.result == 'success' || needs.unit-tests-frontend.result == 'skipped')
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: qlib_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install backend dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install uvicorn
+
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: frontend
+      run: |
+        echo "🏗️ Building frontend..."
+        npm run build
+
+    - name: Setup test database
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+      run: |
+        echo "🗄️ Setting up test database..."
+        python -c "
+        import psycopg2
+        conn = psycopg2.connect('postgresql://postgres:postgres@localhost:5432/qlib_test')
+        conn.close()
+        print('✅ Database connection verified')
+        "
+
+    - name: Start backend server
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+      run: |
+        echo "🚀 Starting backend server..."
+        cd backend
+        python -m uvicorn production_api:app --host 0.0.0.0 --port 8000 &
+        
+        # Wait for server to start
+        timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+        echo "✅ Backend server started"
+
+    - name: Start frontend server
+      working-directory: frontend
+      run: |
+        echo "🎨 Starting frontend server..."
+        npm run preview -- --host 0.0.0.0 --port 5173 &
+        
+        # Wait for server to start
+        timeout 60 bash -c 'until curl -f http://localhost:5173; do sleep 2; done'
+        echo "✅ Frontend server started"
+
+    - name: Verify services
+      run: |
+        echo "🔍 Verifying services..."
+        curl -f http://localhost:8000/health || exit 1
+        curl -f http://localhost:5173 || exit 1
+        echo "✅ All services verified"
+
+  customer-journey-tests:
+    name: 🛣️ Customer Journey Tests
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-test
+    if: needs.build-and-deploy-test.result == 'success'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: qlib_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    strategy:
+      matrix:
+        customer_type: [new_customer, verified_customer, premium_customer, institutional_client]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests psutil
+
+    - name: Start services
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+      run: |
+        echo "🚀 Starting backend server..."
+        cd backend
+        python -m uvicorn production_api:app --host 0.0.0.0 --port 8000 &
+        timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+
+    - name: Run customer journey tests
+      env:
+        CUSTOMER_TYPE: ${{ matrix.customer_type }}
+      run: |
+        echo "🛣️ Testing ${{ matrix.customer_type }} journey..."
+        python -m pytest tests/automation/test_customer_journeys.py::test_${{ matrix.customer_type }}_flow -v
+      continue-on-error: true
+
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: customer-journey-${{ matrix.customer_type }}-results
+        path: test-results/
+
+  staff-workflow-tests:
+    name: 👥 Staff Workflow Tests
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-test
+    if: needs.build-and-deploy-test.result == 'success'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: qlib_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    strategy:
+      matrix:
+        staff_role: [kyc_staff, support_staff, trading_agent, enterprise_admin]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests psutil
+
+    - name: Start services
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+      run: |
+        echo "🚀 Starting backend server..."
+        cd backend
+        python -m uvicorn production_api:app --host 0.0.0.0 --port 8000 &
+        timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+
+    - name: Run staff workflow tests
+      env:
+        STAFF_ROLE: ${{ matrix.staff_role }}
+      run: |
+        echo "👥 Testing ${{ matrix.staff_role }} workflow..."
+        python -m pytest tests/automation/test_staff_workflows.py::test_${{ matrix.staff_role }}_workflow -v
+      continue-on-error: true
+
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: staff-workflow-${{ matrix.staff_role }}-results
+        path: test-results/
+
+  data-integration-tests:
+    name: 📊 Data Integration Tests
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-test
+    if: needs.build-and-deploy-test.result == 'success'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: qlib_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests psutil
+
+    - name: Start services
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+      run: |
+        echo "🚀 Starting backend server..."
+        cd backend
+        python -m uvicorn production_api:app --host 0.0.0.0 --port 8000 &
+        timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+
+    - name: Run data integration tests
+      run: |
+        echo "📊 Running data integration tests..."
+        python -m pytest tests/automation/test_data_integration.py -v
+      continue-on-error: true
+
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: data-integration-results
+        path: test-results/
+
+  performance-tests:
+    name: ⚡ Performance Tests
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-test
+    if: needs.build-and-deploy-test.result == 'success' && contains(fromJSON('["full"]'), needs.setup-and-validate.outputs.test-level)
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: qlib_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests psutil locust
+
+    - name: Start services
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+      run: |
+        echo "🚀 Starting backend server..."
+        cd backend
+        python -m uvicorn production_api:app --host 0.0.0.0 --port 8000 &
+        timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+
+    - name: Run performance tests
+      run: |
+        echo "⚡ Running performance tests..."
+        python -m pytest tests/automation/test_performance.py -v
+      continue-on-error: true
+
+    - name: Run load tests
+      run: |
+        echo "🔥 Running load tests..."
+        python tests/automation/load_test.py --users 50 --spawn-rate 5 --time 60s
+      continue-on-error: true
+
+    - name: Archive performance results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-test-results
+        path: |
+          test-results/
+          performance-reports/
+
+  security-tests:
+    name: 🔒 Security Tests
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-test
+    if: needs.build-and-deploy-test.result == 'success' && contains(fromJSON('["full", "integration"]'), needs.setup-and-validate.outputs.test-level)
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: qlib_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests psutil bandit safety
+
+    - name: Start services
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+      run: |
+        echo "🚀 Starting backend server..."
+        cd backend
+        python -m uvicorn production_api:app --host 0.0.0.0 --port 8000 &
+        timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+
+    - name: Run security tests
+      run: |
+        echo "🔒 Running security tests..."
+        python -m pytest tests/automation/test_security.py -v
+      continue-on-error: true
+
+    - name: Run static security analysis
+      run: |
+        echo "🔍 Running static security analysis..."
+        bandit -r backend/ qlib/ -f json -o security-report.json || true
+        safety check --json --output safety-report.json || true
+
+    - name: Archive security results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-test-results
+        path: |
+          test-results/
+          security-report.json
+          safety-report.json
+
+  comprehensive-testing:
+    name: 🎯 Comprehensive Testing Framework
+    runs-on: ubuntu-latest
+    needs: build-and-deploy-test
+    if: needs.build-and-deploy-test.result == 'success' && needs.setup-and-validate.outputs.test-level == 'full'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: qlib_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install requests psutil
+
+    - name: Start services
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/qlib_test
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+      run: |
+        echo "🚀 Starting backend server..."
+        cd backend
+        python -m uvicorn production_api:app --host 0.0.0.0 --port 8000 &
+        timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+        
+        echo "🎨 Starting frontend server..."
+        cd ../frontend
+        npm ci
+        npm run build
+        npm run preview -- --host 0.0.0.0 --port 5173 &
+        timeout 60 bash -c 'until curl -f http://localhost:5173; do sleep 2; done'
+
+    - name: Run comprehensive testing framework
+      env:
+        BACKEND_URL: http://localhost:8000
+        FRONTEND_URL: http://localhost:5173
+      run: |
+        echo "🎯 Running comprehensive testing framework..."
+        python tests/automation/continuous_testing_framework.py --backend-url http://localhost:8000 --frontend-url http://localhost:5173 --verbose
+
+    - name: Archive comprehensive results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: comprehensive-test-results
+        path: |
+          logs/testing/
+          test-results/
+
+  generate-reports:
+    name: 📋 Generate Test Reports
+    runs-on: ubuntu-latest
+    needs: [customer-journey-tests, staff-workflow-tests, data-integration-tests, performance-tests, security-tests, comprehensive-testing]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: test-artifacts/
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install jinja2 matplotlib seaborn pandas
+
+    - name: Generate comprehensive report
+      run: |
+        echo "📋 Generating comprehensive test report..."
+        python tests/automation/generate_test_report.py --artifacts-dir test-artifacts/
+
+    - name: Upload test report
+      uses: actions/upload-artifact@v3
+      with:
+        name: comprehensive-test-report
+        path: |
+          test-report.html
+          test-summary.json
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          try {
+            const summary = JSON.parse(fs.readFileSync('test-summary.json', 'utf8'));
+            const successRate = parseFloat(summary.success_rate);
+            const emoji = successRate >= 95 ? '✅' : successRate >= 80 ? '⚠️' : '❌';
+            
+            const body = `
+          ## ${emoji} Automated Test Results
+          
+          **Overall Success Rate:** ${summary.success_rate}
+          
+          **Test Summary:**
+          - 🧪 Total Tests: ${summary.total_tests}
+          - ✅ Passed: ${summary.passed}
+          - ❌ Failed: ${summary.failed}
+          - ⏭️ Skipped: ${summary.skipped}
+          
+          **Test Suites:**
+          ${Object.entries(summary.test_suites || {}).map(([suite, data]) => 
+            `- ${suite}: ${data.success_rate} (${data.passed}/${data.total_tests})`
+          ).join('\n')}
+          
+          ${summary.critical_failures && summary.critical_failures.length > 0 ? 
+            `**⚠️ Critical Failures:** ${summary.critical_failures.length}` : 
+            '**✅ No Critical Failures**'
+          }
+          
+          [View detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          } catch (error) {
+            console.log('Could not read test summary:', error);
+          }
+
+  notify-results:
+    name: 📢 Notify Results
+    runs-on: ubuntu-latest
+    needs: [generate-reports]
+    if: always() && github.event_name == 'schedule'
+    
+    steps:
+    - name: Download test summary
+      uses: actions/download-artifact@v3
+      with:
+        name: comprehensive-test-report
+
+    - name: Send Slack notification
+      if: env.SLACK_WEBHOOK_URL != ''
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        if [ -f test-summary.json ]; then
+          python -c "
+          import json
+          import requests
+          import os
+          
+          with open('test-summary.json') as f:
+              summary = json.load(f)
+          
+          success_rate = float(summary['success_rate'].replace('%', ''))
+          emoji = '✅' if success_rate >= 95 else '⚠️' if success_rate >= 80 else '❌'
+          color = 'good' if success_rate >= 95 else 'warning' if success_rate >= 80 else 'danger'
+          
+          message = f'{emoji} Qlib Trading Platform - Daily Test Results\\n'
+          message += f'Success Rate: {summary[\"success_rate\"]}\\n'
+          message += f'Total Tests: {summary[\"total_tests\"]} | Passed: {summary[\"passed\"]} | Failed: {summary[\"failed\"]}'
+          
+          payload = {
+              'text': 'Qlib Trading Platform - Daily Test Results',
+              'attachments': [{
+                  'color': color,
+                  'text': message,
+                  'footer': 'Qlib Continuous Testing Framework'
+              }]
+          }
+          
+          webhook_url = os.environ.get('SLACK_WEBHOOK_URL')
+          if webhook_url:
+              response = requests.post(webhook_url, json=payload)
+              print(f'Slack notification sent: {response.status_code}')
+          "
+        fi
+
+    - name: Create GitHub issue on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Daily Test Suite Failed',
+            body: `
+          The daily automated test suite has failed.
+          
+          **Run Details:**
+          - Workflow: ${{ github.workflow }}
+          - Run ID: ${{ github.run_id }}
+          - Commit: ${{ github.sha }}
+          
+          Please investigate the failures and address any issues.
+          
+          [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `,
+            labels: ['bug', 'testing', 'high-priority']
+          });

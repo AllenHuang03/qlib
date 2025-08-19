@@ -17,12 +17,12 @@ import Community from './pages/Community/Community';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import Upgrade from './pages/Upgrade/Upgrade';
 import KYCWizard from './components/KYC/KYCWizard';
-import RoleTester from './components/Testing/RoleTester';
 import PlanSelection from './pages/PlanSelection/PlanSelection';
 import PaperTrading from './pages/PaperTrading/PaperTrading';
 import TraderAgents from './pages/TraderAgents/TraderAgents';
 import TradingEnvironment from './pages/Trading/TradingEnvironment';
 import AIInsights from './pages/AIInsights/AIInsights';
+import LiveTradingDashboard from './pages/enhanced/LiveTradingDashboard';
 import AboutUs from './pages/Legal/AboutUs';
 import ContactUs from './pages/Legal/ContactUs';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
@@ -98,13 +98,13 @@ function App() {
           <Route path="/paper-trading" element={<PaperTrading />} />
           <Route path="/trader-agents" element={<TraderAgents />} />
           <Route path="/trading-environment" element={<TradingEnvironment />} />
+          <Route path="/live-trading" element={<LiveTradingDashboard />} />
           <Route path="/insights" element={<AIInsights />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/faq" element={<FAQ />} />
-          <Route path="/role-tester" element={<RoleTester />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Layout>

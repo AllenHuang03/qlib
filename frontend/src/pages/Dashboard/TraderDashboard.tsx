@@ -39,6 +39,7 @@ import {
   Security
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import DemoMarketDataCard from '../../components/enhanced/DemoMarketDataCard';
 
 interface TraderDashboardProps {
   user: any;
@@ -298,34 +299,44 @@ const TraderDashboard: React.FC<TraderDashboardProps> = ({ user, onStartKYC }) =
             </Grid>
 
             <Grid item xs={12} lg={4}>
-              <Typography variant="h6" gutterBottom>
-                Current Positions
-              </Typography>
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Symbol</TableCell>
-                      <TableCell align="right">Qty</TableCell>
-                      <TableCell align="right">P&L</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {positions.map((position) => (
-                      <TableRow key={position.symbol}>
-                        <TableCell>{position.symbol}</TableCell>
-                        <TableCell align="right">{position.quantity}</TableCell>
-                        <TableCell 
-                          align="right"
-                          sx={{ color: position.pnl > 0 ? 'success.main' : 'error.main' }}
-                        >
-                          ${position.pnl}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              <Grid container spacing={2}>
+                {/* Enhanced Market Data Card */}
+                <Grid item xs={12}>
+                  <DemoMarketDataCard />
+                </Grid>
+                
+                {/* Current Positions */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Current Positions
+                  </Typography>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Symbol</TableCell>
+                          <TableCell align="right">Qty</TableCell>
+                          <TableCell align="right">P&L</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {positions.map((position) => (
+                          <TableRow key={position.symbol}>
+                            <TableCell>{position.symbol}</TableCell>
+                            <TableCell align="right">{position.quantity}</TableCell>
+                            <TableCell 
+                              align="right"
+                              sx={{ color: position.pnl > 0 ? 'success.main' : 'error.main' }}
+                            >
+                              ${position.pnl}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
         </TabPanel>

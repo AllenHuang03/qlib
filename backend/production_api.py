@@ -18,21 +18,64 @@ import requests
 import io
 from contextlib import asynccontextmanager
 
-# Import Qlib service
+# Import Monitoring System
 try:
-    from qlib_service import qlib_service
-    QLIB_SERVICE_AVAILABLE = True
+    from monitoring import monitoring, setup_monitoring_routes
+    MONITORING_AVAILABLE = True
+    print("SUCCESS: Production Monitoring System loaded")
 except ImportError:
-    print("Qlib service not available, using fallback")
-    QLIB_SERVICE_AVAILABLE = False
+    MONITORING_AVAILABLE = False
+    print("WARNING: Monitoring system not available")
 
-# Import Market Data service
+# Import Optimized Model service
 try:
-    from market_data_service import market_data_service
-    MARKET_DATA_SERVICE_AVAILABLE = True
+    from optimized_model_service import optimized_model_service
+    OPTIMIZED_MODEL_SERVICE_AVAILABLE = True
+    print("SUCCESS: Optimized Model Service with GPU acceleration loaded")
 except ImportError:
-    print("Market data service not available, using fallback")
-    MARKET_DATA_SERVICE_AVAILABLE = False
+    OPTIMIZED_MODEL_SERVICE_AVAILABLE = False
+    try:
+        from qlib_service import qlib_service
+        QLIB_SERVICE_AVAILABLE = True
+        print("WARNING: Using fallback Qlib Service")
+    except ImportError:
+        print("ERROR: No model service available, using mock data")
+        QLIB_SERVICE_AVAILABLE = False
+
+# Import Enhanced Market Data service
+try:
+    from enhanced_market_data_service import enhanced_market_data_service
+    ENHANCED_MARKET_DATA_AVAILABLE = True
+    print("SUCCESS: Enhanced Market Data Service with OpenBB integration loaded")
+except ImportError:
+    ENHANCED_MARKET_DATA_AVAILABLE = False
+    try:
+        from market_data_service import market_data_service
+        MARKET_DATA_SERVICE_AVAILABLE = True
+        print("WARNING: Using fallback Market Data Service")
+    except ImportError:
+        print("ERROR: No market data service available, using mock data")
+        MARKET_DATA_SERVICE_AVAILABLE = False
+
+# Import Live Market Data Engine
+try:
+    from enhanced_market_data.live_market_engine import live_market_engine
+    from enhanced_market_data.websocket_market_service import websocket_market_service
+    from enhanced_market_data.multi_asset_service import multi_asset_service
+    LIVE_MARKET_ENGINE_AVAILABLE = True
+    print("SUCCESS: Live Market Data Engine with WebSocket streaming loaded")
+except ImportError:
+    LIVE_MARKET_ENGINE_AVAILABLE = False
+    print("WARNING: Live Market Data Engine not available")
+
+# Import Test Account Service
+try:
+    from test_account_service import test_account_service, TestAccount
+    TEST_ACCOUNT_SERVICE_AVAILABLE = True
+    print("SUCCESS: Test Account Service loaded with specialized test accounts")
+except ImportError:
+    TEST_ACCOUNT_SERVICE_AVAILABLE = False
+    print("WARNING: Test Account Service not available, using demo fallback")
 
 # Import WebSocket manager
 try:
@@ -42,6 +85,22 @@ except ImportError:
     print("WebSocket manager not available")
     WEBSOCKET_AVAILABLE = False
 
+# Import Notification System
+try:
+    from notification_api import router as notification_router
+    from notification_service import notification_service
+    from notification_integrations import (
+        auth_notifications, kyc_notifications, payment_notifications,
+        trading_notifications, portfolio_notifications
+    )
+    from notification_compliance import compliance_manager
+    from notification_monitoring import monitoring_service
+    NOTIFICATION_SYSTEM_AVAILABLE = True
+    print("SUCCESS: Comprehensive Notification & Communication System loaded")
+except ImportError as e:
+    print(f"WARNING: Notification system not available - {e}")
+    NOTIFICATION_SYSTEM_AVAILABLE = False
+
 # Import Payment service
 try:
     from payment_service import payment_service
@@ -50,6 +109,33 @@ except ImportError:
     print("Payment service not available")
     PAYMENT_SERVICE_AVAILABLE = False
 
+# Import Real-Time Trading Engine
+try:
+    from real_time_trading_engine import real_time_trading_engine
+    TRADING_ENGINE_AVAILABLE = True
+    print("SUCCESS: Real-Time Trading Engine with live signals loaded")
+except ImportError:
+    TRADING_ENGINE_AVAILABLE = False
+    print("WARNING: Real-Time Trading Engine not available")
+
+# Import Redis Cache Service
+try:
+    from redis_cache_service import redis_cache_service
+    REDIS_CACHE_AVAILABLE = True
+    print("SUCCESS: Enhanced Redis Cache Service loaded")
+except ImportError:
+    REDIS_CACHE_AVAILABLE = False
+    print("WARNING: Redis Cache Service not available")
+
+# Import Advanced Portfolio Manager
+try:
+    from advanced_portfolio_manager import advanced_portfolio_manager
+    PORTFOLIO_MANAGER_AVAILABLE = True
+    print("SUCCESS: Advanced Portfolio Manager with risk engine loaded")
+except ImportError:
+    PORTFOLIO_MANAGER_AVAILABLE = False
+    print("WARNING: Advanced Portfolio Manager not available")
+
 # Import Cloud Storage service
 try:
     from cloud_storage_service import cloud_storage_service
@@ -57,6 +143,25 @@ try:
 except ImportError:
     print("Cloud storage service not available")
     STORAGE_SERVICE_AVAILABLE = False
+
+# Import Model Training API
+try:
+    from model_training_api import (
+        start_model_training,
+        get_training_progress,
+        get_all_training_sessions,
+        control_training,
+        get_training_logs,
+        get_model_performance,
+        get_available_model_types,
+        get_training_statistics,
+        validate_training_config
+    )
+    MODEL_TRAINING_AVAILABLE = True
+    print("SUCCESS: Model Training API with real-time progress loaded")
+except ImportError as e:
+    print(f"WARNING: Model Training API not available: {e}")
+    MODEL_TRAINING_AVAILABLE = False
 
 # Data Models
 class Model(BaseModel):
@@ -195,6 +300,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include notification API routes
+if NOTIFICATION_SYSTEM_AVAILABLE:
+    app.include_router(notification_router)
+    print("SUCCESS: Notification API endpoints added")
+else:
+    print("WARNING: Notification API endpoints not available")
+
+# Setup monitoring routes
+if MONITORING_AVAILABLE:
+    setup_monitoring_routes(app)
+    print("SUCCESS: Monitoring endpoints added (/health, /health/detailed, /metrics)")
+else:
+    # Basic health check fallback
+    @app.get("/health")
+    async def health_check():
+        return {"status": "healthy", "timestamp": datetime.datetime.now().isoformat()}
+
 # Health Check
 @app.get("/")
 async def root():
@@ -245,6 +367,28 @@ async def websocket_market(websocket: WebSocket):
     else:
         await websocket.close()
 
+@app.websocket("/ws/live-market")
+async def websocket_live_market(websocket: WebSocket):
+    """Enhanced WebSocket endpoint for live market data streaming"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            connection_id = await websocket_market_service.connect_client(websocket)
+            
+            while True:
+                message = await websocket.receive_text()
+                message_data = json.loads(message)
+                await websocket_market_service.handle_message(connection_id, message_data)
+                
+        except WebSocketDisconnect:
+            if 'connection_id' in locals():
+                await websocket_market_service.disconnect_client(connection_id)
+        except Exception as e:
+            print(f"Live market WebSocket error: {e}")
+            if 'connection_id' in locals():
+                await websocket_market_service.disconnect_client(connection_id)
+    else:
+        await websocket.close()
+
 @app.websocket("/ws/system")
 async def websocket_system(websocket: WebSocket):
     """WebSocket endpoint for system notifications"""
@@ -261,11 +405,34 @@ async def websocket_system(websocket: WebSocket):
 # Models API
 @app.get("/api/models", response_model=List[Model])
 async def get_models():
-    """Get all AI models"""
-    if QLIB_SERVICE_AVAILABLE:
+    """Get all AI models with enhanced performance metrics"""
+    if OPTIMIZED_MODEL_SERVICE_AVAILABLE:
+        try:
+            # Get models from optimized service
+            performance_data = await optimized_model_service.get_model_performance()
+            models = []
+            
+            for model_id, perf in performance_data.items():
+                config = optimized_model_service.production_models.get(model_id, {})
+                model = Model(
+                    id=model_id,
+                    name=config.get('name', model_id),
+                    type=config.get('type', 'Unknown'),
+                    status=config.get('status', 'active'),
+                    accuracy=f"{perf.accuracy}%",
+                    sharpe=str(perf.sharpe_ratio),
+                    last_trained=perf.last_updated.split('T')[0],
+                    description=f"Production {config.get('type')} model with {config.get('features', 'Alpha')} features",
+                    created_at=perf.last_updated
+                )
+                models.append(model)
+            
+            return models
+        except Exception as e:
+            print(f"Error getting models from optimized service: {e}")
+    elif QLIB_SERVICE_AVAILABLE:
         try:
             models_data = qlib_service.get_models()
-            # Convert to Model objects for API response
             models = [Model(**model) for model in models_data]
             return models
         except Exception as e:
@@ -444,9 +611,18 @@ async def duplicate_model(model_id: str):
     raise HTTPException(status_code=404, detail="Model not found")
 
 @app.get("/api/models/{model_id}/predictions")
-async def get_model_predictions(model_id: str):
-    """Get predictions from a specific model"""
-    if QLIB_SERVICE_AVAILABLE:
+async def get_model_predictions(model_id: str, symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,TLS.AX"):
+    """Get enhanced predictions from a specific model"""
+    symbol_list = [s.strip() for s in symbols.split(",")]
+    
+    if OPTIMIZED_MODEL_SERVICE_AVAILABLE:
+        try:
+            predictions = await optimized_model_service.get_model_predictions(symbol_list, [model_id])
+            if model_id in predictions:
+                return [pred.__dict__ for pred in predictions[model_id]]
+        except Exception as e:
+            print(f"Error getting predictions from optimized service: {e}")
+    elif QLIB_SERVICE_AVAILABLE:
         try:
             predictions = qlib_service.get_predictions(model_id)
             if predictions:
@@ -455,81 +631,162 @@ async def get_model_predictions(model_id: str):
             print(f"Error getting predictions from Qlib service: {e}")
     
     # Fallback to mock predictions
-    mock_predictions = [
-        {
-            "symbol": "CBA.AX",
-            "signal": "BUY",
-            "confidence": 0.85,
-            "target_price": 115.50,
-            "current_price": 110.50,
+    mock_predictions = []
+    for symbol in symbol_list:
+        mock_predictions.append({
+            "symbol": symbol,
+            "signal": random.choice(["BUY", "HOLD", "SELL"]),
+            "confidence": round(random.uniform(0.6, 0.95), 3),
+            "target_price": round(random.uniform(50, 300), 2),
+            "current_price": round(random.uniform(45, 295), 2),
+            "prediction": round(random.uniform(-0.05, 0.08), 4),
+            "risk_score": round(random.uniform(0.1, 0.5), 3),
             "timestamp": datetime.datetime.now().isoformat()
-        },
-        {
-            "symbol": "BHP.AX", 
-            "signal": "HOLD",
-            "confidence": 0.72,
-            "target_price": 47.20,
-            "current_price": 45.20,
-            "timestamp": datetime.datetime.now().isoformat()
-        },
-        {
-            "symbol": "CSL.AX",
-            "signal": "SELL",
-            "confidence": 0.78,
-            "target_price": 285.00,
-            "current_price": 295.50,
-            "timestamp": datetime.datetime.now().isoformat()
-        },
-        {
-            "symbol": "WBC.AX",
-            "signal": "BUY",
-            "confidence": 0.81,
-            "target_price": 26.80,
-            "current_price": 25.20,
-            "timestamp": datetime.datetime.now().isoformat()
-        },
-        {
-            "symbol": "TLS.AX",
-            "signal": "HOLD",
-            "confidence": 0.68,
-            "target_price": 4.15,
-            "current_price": 4.05,
-            "timestamp": datetime.datetime.now().isoformat()
-        }
-    ]
+        })
     
     return mock_predictions
+
+@app.get("/api/models/ensemble/predictions")
+async def get_ensemble_predictions(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,TLS.AX"):
+    """Get ensemble predictions from multiple models"""
+    symbol_list = [s.strip() for s in symbols.split(",")]
+    
+    if OPTIMIZED_MODEL_SERVICE_AVAILABLE:
+        try:
+            ensemble_results = await optimized_model_service.get_ensemble_prediction(symbol_list)
+            return {
+                "predictions": ensemble_results,
+                "models_used": len(optimized_model_service.production_models),
+                "timestamp": datetime.datetime.now().isoformat(),
+                "ensemble_method": "accuracy_weighted"
+            }
+        except Exception as e:
+            print(f"Error getting ensemble predictions: {e}")
+    
+    # Fallback ensemble
+    ensemble_predictions = {}
+    for symbol in symbol_list:
+        ensemble_predictions[symbol] = {
+            "prediction": round(random.uniform(-0.03, 0.05), 4),
+            "confidence": round(random.uniform(0.7, 0.9), 3),
+            "signal": random.choice(["BUY", "HOLD", "SELL"]),
+            "target_price": round(random.uniform(50, 300), 2),
+            "contributing_models": 3,
+            "model_agreement": round(random.uniform(0.6, 0.9), 3)
+        }
+    
+    return {
+        "predictions": ensemble_predictions,
+        "models_used": 3,
+        "timestamp": datetime.datetime.now().isoformat(),
+        "ensemble_method": "mock"
+    }
+
+@app.get("/api/models/performance")
+async def get_models_performance():
+    """Get performance metrics for all models"""
+    if OPTIMIZED_MODEL_SERVICE_AVAILABLE:
+        try:
+            performance_data = await optimized_model_service.get_model_performance()
+            return {
+                "models": {k: v.__dict__ for k, v in performance_data.items()},
+                "service_stats": optimized_model_service.get_service_statistics(),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"Error getting model performance: {e}")
+    
+    # Fallback performance data
+    return {
+        "models": {
+            "lstm_alpha158": {
+                "accuracy": 87.2,
+                "sharpe_ratio": 1.89,
+                "max_drawdown": 0.12,
+                "win_rate": 0.68,
+                "avg_return": 0.15
+            },
+            "lightgbm_multi_factor": {
+                "accuracy": 85.5,
+                "sharpe_ratio": 1.67,
+                "max_drawdown": 0.08,
+                "win_rate": 0.71,
+                "avg_return": 0.13
+            }
+        },
+        "service_stats": {"mock": True},
+        "timestamp": datetime.datetime.now().isoformat()
+    }
 
 # Authentication API
 @app.post("/api/auth/login")
 async def login(request: Request):
-    """Handle user login"""
+    """Handle user login with test account support"""
     try:
         body = await request.json()
         email = body.get("email", "")
         password = body.get("password", "")
         
-        # Simple demo authentication
-        if email and password:
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email and password required")
+        
+        # First, try test account authentication
+        if TEST_ACCOUNT_SERVICE_AVAILABLE:
+            test_account = test_account_service.authenticate_test_account(email, password)
+            if test_account:
+                return {
+                    "access_token": f"test-token-{test_account.id}",
+                    "token_type": "bearer",
+                    "user": {
+                        "id": test_account.id,
+                        "email": test_account.email,
+                        "name": test_account.name,
+                        "role": test_account.role,
+                        "user_type": test_account.user_type,
+                        "kyc_status": test_account.kyc_status,
+                        "subscription_tier": test_account.subscription_tier,
+                        "portfolio_value": test_account.portfolio_value,
+                        "account_balance": test_account.account_balance,
+                        "trading_experience": test_account.trading_experience,
+                        "risk_tolerance": test_account.risk_tolerance,
+                        "investment_goals": test_account.investment_goals,
+                        "permissions": test_account.permissions,
+                        "department": test_account.department,
+                        "paper_trading": True,
+                        "test_scenarios": test_account.test_scenarios,
+                        "description": test_account.description
+                    },
+                    "message": "Test account login successful"
+                }
+        
+        # Fallback to demo authentication
+        if email == "demo@qlib.com" and password == "demo123":
             return {
-                "token": "demo-auth-token-12345",
+                "access_token": "demo-auth-token-12345",
+                "token_type": "bearer",
                 "user": {
-                    "id": "user-1",
+                    "id": "demo-user-1",
                     "email": email,
                     "name": "Demo User",
-                    "subscription": "pro"
+                    "role": "customer",
+                    "subscription_tier": "pro",
+                    "paper_trading": True
                 },
-                "message": "Login successful"
+                "message": "Demo login successful"
             }
-        else:
-            raise HTTPException(status_code=400, detail="Invalid credentials")
+        
+        # If no authentication method works
+        raise HTTPException(status_code=401, detail="Invalid credentials")
             
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Login failed")
+        print(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Login failed")
 
 @app.get("/api/auth/profile")
 async def get_profile(request: Request):
-    """Get user profile"""
+    """Get user profile with test account support"""
     try:
         # Extract token from Authorization header
         auth_header = request.headers.get("authorization", "")
@@ -538,21 +795,127 @@ async def get_profile(request: Request):
         
         token = auth_header.replace("Bearer ", "")
         
-        # Simple demo token validation
-        if token and token.strip() and token != "null":
+        if not token or token.strip() == "" or token == "null":
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # Check if it's a test account token
+        if token.startswith("test-token-") and TEST_ACCOUNT_SERVICE_AVAILABLE:
+            account_id = token.replace("test-token-", "")
+            test_account = test_account_service.get_account_by_id(account_id)
+            if test_account:
+                return {
+                    "id": test_account.id,
+                    "email": test_account.email,
+                    "name": test_account.name,
+                    "role": test_account.role,
+                    "user_type": test_account.user_type,
+                    "kyc_status": test_account.kyc_status,
+                    "subscription_tier": test_account.subscription_tier,
+                    "portfolio_value": test_account.portfolio_value,
+                    "account_balance": test_account.account_balance,
+                    "trading_experience": test_account.trading_experience,
+                    "risk_tolerance": test_account.risk_tolerance,
+                    "investment_goals": test_account.investment_goals,
+                    "permissions": test_account.permissions,
+                    "department": test_account.department,
+                    "paper_trading": True,
+                    "test_scenarios": test_account.test_scenarios,
+                    "description": test_account.description,
+                    "created_at": test_account.created_at.isoformat(),
+                    "last_login": test_account.last_login.isoformat() if test_account.last_login else None
+                }
+        
+        # Demo token validation
+        if token == "demo-auth-token-12345":
             return {
-                "id": "user-1",
-                "email": "demo@example.com",
+                "id": "demo-user-1",
+                "email": "demo@qlib.com",
                 "name": "Demo User",
-                "role": "customer",  # or "trader", "admin"
-                "subscription": "pro",
+                "role": "customer",
+                "subscription_tier": "pro",
+                "paper_trading": True,
                 "created_at": "2024-01-01T00:00:00Z"
             }
-        else:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        raise HTTPException(status_code=401, detail="Invalid token")
             
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Profile error: {e}")
         raise HTTPException(status_code=401, detail="Authentication required")
+
+# Test Account Management API
+@app.get("/api/test-accounts")
+async def get_test_accounts():
+    """Get all test accounts for login showcase"""
+    if not TEST_ACCOUNT_SERVICE_AVAILABLE:
+        return {
+            "accounts": [],
+            "message": "Test account service not available"
+        }
+    
+    try:
+        accounts = test_account_service.get_all_accounts()
+        return {
+            "accounts": [
+                {
+                    "id": acc.id,
+                    "email": acc.email,
+                    "name": acc.name,
+                    "user_type": acc.user_type,
+                    "role": acc.role,
+                    "kyc_status": acc.kyc_status,
+                    "subscription_tier": acc.subscription_tier,
+                    "portfolio_value": acc.portfolio_value,
+                    "account_balance": acc.account_balance,
+                    "department": acc.department,
+                    "test_scenarios": acc.test_scenarios,
+                    "description": acc.description
+                } for acc in accounts
+            ],
+            "summary": test_account_service.generate_account_summary()
+        }
+    except Exception as e:
+        print(f"Test accounts error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve test accounts")
+
+@app.get("/api/test-accounts/summary")
+async def get_test_accounts_summary():
+    """Get test account summary statistics"""
+    if not TEST_ACCOUNT_SERVICE_AVAILABLE:
+        return {"message": "Test account service not available"}
+    
+    try:
+        return test_account_service.generate_account_summary()
+    except Exception as e:
+        print(f"Test account summary error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate summary")
+
+@app.put("/api/test-accounts/{account_id}/kyc-status")
+async def update_test_account_kyc_status(account_id: str, request: Request):
+    """Update KYC status for test account (for testing KYC workflows)"""
+    if not TEST_ACCOUNT_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Test account service not available")
+    
+    try:
+        body = await request.json()
+        new_status = body.get("kyc_status")
+        
+        if not new_status or new_status not in ["not_started", "pending", "under_review", "approved", "rejected"]:
+            raise HTTPException(status_code=400, detail="Invalid KYC status")
+        
+        success = test_account_service.update_account_kyc_status(account_id, new_status)
+        if success:
+            return {"message": f"KYC status updated to {new_status}"}
+        else:
+            raise HTTPException(status_code=404, detail="Test account not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"KYC status update error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update KYC status")
 
 # AI Signals API  
 @app.get("/api/signals")
@@ -581,8 +944,15 @@ async def get_ai_signals(symbols: str = "CBA.AX,BHP.AX,CSL.AX"):
 # Enhanced Market Data API
 @app.get("/api/market/quotes")
 async def get_quotes(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,ANZ.AX"):
-    """Get real-time market quotes for multiple symbols"""
-    if MARKET_DATA_SERVICE_AVAILABLE:
+    """Get real-time market quotes with enhanced data"""
+    if ENHANCED_MARKET_DATA_AVAILABLE:
+        try:
+            symbol_list = [s.strip() for s in symbols.split(",")]
+            quotes_data = await enhanced_market_data_service.get_comprehensive_quotes(symbol_list)
+            return quotes_data
+        except Exception as e:
+            print(f"Error using enhanced market data service: {e}")
+    elif MARKET_DATA_SERVICE_AVAILABLE:
         try:
             symbol_list = symbols.split(",")
             quotes_data = await market_data_service.get_realtime_quotes(symbol_list)
@@ -671,8 +1041,13 @@ async def get_market_indices():
 
 @app.get("/api/market/sectors")
 async def get_sector_performance():
-    """Get sector performance data"""
-    if MARKET_DATA_SERVICE_AVAILABLE:
+    """Get enhanced sector performance data"""
+    if ENHANCED_MARKET_DATA_AVAILABLE:
+        try:
+            return await enhanced_market_data_service.get_sector_performance()
+        except Exception as e:
+            print(f"Error getting enhanced sector performance: {e}")
+    elif MARKET_DATA_SERVICE_AVAILABLE:
         try:
             return await market_data_service.get_sector_performance()
         except Exception as e:
@@ -685,6 +1060,40 @@ async def get_sector_performance():
         {"sector": "Healthcare", "change_percent": 0.5, "top_stocks": ["CSL.AX", "COL.AX"]}
     ]
     return {"sectors": sectors}
+
+@app.get("/api/market/real-time")
+async def get_real_time_market_data(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,TLS.AX"):
+    """Get comprehensive real-time market data optimized for trading"""
+    if ENHANCED_MARKET_DATA_AVAILABLE:
+        try:
+            symbol_list = [s.strip() for s in symbols.split(",")]
+            return await enhanced_market_data_service.get_real_time_market_data(symbol_list)
+        except Exception as e:
+            print(f"Error getting real-time market data: {e}")
+    
+    # Fallback to basic quotes
+    return await get_quotes(symbols)
+
+@app.get("/api/market/sentiment/{symbol}")
+async def get_market_sentiment(symbol: str):
+    """Get market sentiment analysis for a specific symbol"""
+    if ENHANCED_MARKET_DATA_AVAILABLE:
+        try:
+            sentiment = await enhanced_market_data_service._get_market_sentiment(symbol)
+            if sentiment:
+                return sentiment.__dict__
+        except Exception as e:
+            print(f"Error getting market sentiment: {e}")
+    
+    # Fallback mock sentiment
+    return {
+        "symbol": symbol,
+        "sentiment_score": round(random.uniform(-1, 1), 3),
+        "confidence": round(random.uniform(0.6, 0.9), 3),
+        "analyst_rating": random.choice(["Strong Buy", "Buy", "Hold", "Sell"]),
+        "news_volume": random.randint(5, 50),
+        "social_mentions": random.randint(100, 10000)
+    }
 
 @app.get("/api/market/news")
 async def get_market_news(query: str = "ASX Australian stock market", limit: int = 10):
@@ -710,8 +1119,29 @@ async def get_market_news(query: str = "ASX Australian stock market", limit: int
 # Portfolio API
 @app.get("/api/portfolio/holdings", response_model=List[Holding])
 async def get_holdings():
-    """Get portfolio holdings"""
-    # Mock holdings data
+    """Get portfolio holdings with advanced analytics"""
+    if PORTFOLIO_MANAGER_AVAILABLE:
+        try:
+            positions = await advanced_portfolio_manager.get_positions()
+            # Convert to Holding objects for API response
+            holdings = []
+            for pos in positions:
+                holding = Holding(
+                    symbol=pos['symbol'],
+                    name=pos['symbol'].replace('.AX', ''),
+                    quantity=pos['shares'],
+                    price=pos['current_price'],
+                    value=pos['market_value'],
+                    weight=pos['weight'] * 100,
+                    pnl=pos['unrealized_pnl'],
+                    pnl_percent=pos['unrealized_pnl_percent']
+                )
+                holdings.append(holding)
+            return holdings
+        except Exception as e:
+            logger.error(f"Error getting portfolio holdings: {e}")
+    
+    # Fallback mock data
     holdings = [
         Holding(
             symbol="CBA.AX",
@@ -738,9 +1168,29 @@ async def get_holdings():
 
 @app.post("/api/portfolio/rebalance")
 async def rebalance_portfolio():
-    """Rebalance portfolio"""
-    await asyncio.sleep(2)  # Simulate processing
+    """Generate and execute portfolio rebalancing"""
+    if PORTFOLIO_MANAGER_AVAILABLE:
+        try:
+            # Generate rebalancing recommendation
+            recommendation = await advanced_portfolio_manager.generate_rebalance_recommendation()
+            
+            return {
+                "message": "Rebalancing recommendation generated",
+                "recommendation": {
+                    "recommendation_id": recommendation.recommendation_id,
+                    "trades_required": recommendation.trades_required,
+                    "expected_improvement": recommendation.expected_improvement,
+                    "transaction_costs": recommendation.transaction_costs,
+                    "reasoning": recommendation.reasoning,
+                    "confidence_score": recommendation.confidence_score
+                },
+                "timestamp": recommendation.timestamp
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Rebalancing failed: {e}")
     
+    # Fallback mock response
+    await asyncio.sleep(2)
     changes = [
         {"action": "BUY", "quantity": 100, "symbol": "CSL.AX", "reason": "Underweight healthcare"},
         {"action": "SELL", "quantity": 50, "symbol": "WBC.AX", "reason": "Overweight financials"}
@@ -750,6 +1200,189 @@ async def rebalance_portfolio():
         "message": "Portfolio rebalanced successfully",
         "changes": changes,
         "estimated_benefit": "+$1,240 annual return improvement"
+    }
+
+@app.get("/api/portfolio/metrics")
+async def get_portfolio_metrics():
+    """Get comprehensive portfolio performance metrics"""
+    if PORTFOLIO_MANAGER_AVAILABLE:
+        try:
+            metrics = await advanced_portfolio_manager.get_portfolio_metrics()
+            return {
+                "metrics": {
+                    "total_value": metrics.total_value,
+                    "cash_balance": metrics.cash_balance,
+                    "invested_value": metrics.invested_value,
+                    "total_pnl": metrics.total_pnl,
+                    "total_pnl_percent": metrics.total_pnl_percent,
+                    "daily_pnl": metrics.daily_pnl,
+                    "daily_return": metrics.daily_return,
+                    "volatility": metrics.volatility,
+                    "sharpe_ratio": metrics.sharpe_ratio,
+                    "sortino_ratio": metrics.sortino_ratio,
+                    "max_drawdown": metrics.max_drawdown,
+                    "beta": metrics.beta,
+                    "alpha": metrics.alpha,
+                    "win_rate": metrics.win_rate,
+                    "profit_factor": metrics.profit_factor
+                },
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get portfolio metrics: {e}")
+    
+    # Fallback mock metrics
+    return {
+        "metrics": {
+            "total_value": 1050000,
+            "cash_balance": 50000,
+            "invested_value": 1000000,
+            "total_pnl": 50000,
+            "total_pnl_percent": 5.0,
+            "daily_pnl": 2500,
+            "daily_return": 0.24,
+            "volatility": 12.5,
+            "sharpe_ratio": 1.65,
+            "max_drawdown": 8.2,
+            "beta": 1.15,
+            "win_rate": 68.5
+        },
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/portfolio/risk")
+async def get_portfolio_risk_metrics():
+    """Get advanced portfolio risk metrics"""
+    if PORTFOLIO_MANAGER_AVAILABLE:
+        try:
+            risk_metrics = await advanced_portfolio_manager.get_risk_metrics()
+            return {
+                "risk_metrics": {
+                    "var_1d": risk_metrics.var_1d,
+                    "var_5d": risk_metrics.var_5d,
+                    "cvar_1d": risk_metrics.cvar_1d,
+                    "expected_shortfall": risk_metrics.expected_shortfall,
+                    "maximum_drawdown": risk_metrics.maximum_drawdown,
+                    "downside_deviation": risk_metrics.downside_deviation,
+                    "tracking_error": risk_metrics.tracking_error,
+                    "concentration_risk": risk_metrics.concentration_risk,
+                    "sector_risk": risk_metrics.sector_risk,
+                    "correlation_risk": risk_metrics.correlation_risk,
+                    "liquidity_risk": risk_metrics.liquidity_risk
+                },
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get risk metrics: {e}")
+    
+    # Fallback mock risk metrics
+    return {
+        "risk_metrics": {
+            "var_1d": 15000,
+            "var_5d": 33500,
+            "cvar_1d": 22000,
+            "maximum_drawdown": 8.2,
+            "concentration_risk": {"CBA.AX": 0.15, "BHP.AX": 0.16},
+            "sector_risk": {"Financials": 0.45, "Materials": 0.25, "Healthcare": 0.15},
+            "correlation_risk": 0.35,
+            "liquidity_risk": 0.85
+        },
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.post("/api/portfolio/position")
+async def add_portfolio_position(request: Request):
+    """Add new position to portfolio"""
+    if PORTFOLIO_MANAGER_AVAILABLE:
+        try:
+            data = await request.json()
+            symbol = data.get('symbol')
+            shares = data.get('shares')
+            price = data.get('price')
+            
+            if not all([symbol, shares, price]):
+                raise HTTPException(status_code=400, detail="Missing required fields: symbol, shares, price")
+            
+            success = await advanced_portfolio_manager.add_position(symbol, shares, price)
+            
+            if success:
+                return {
+                    "message": f"Successfully added {shares} shares of {symbol}",
+                    "symbol": symbol,
+                    "shares": shares,
+                    "price": price,
+                    "timestamp": datetime.datetime.now().isoformat()
+                }
+            else:
+                raise HTTPException(status_code=400, detail="Failed to add position - risk limits or insufficient funds")
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error adding position: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Portfolio manager not available")
+
+@app.delete("/api/portfolio/position/{symbol}")
+async def remove_portfolio_position(symbol: str, shares: Optional[float] = None):
+    """Remove or reduce position"""
+    if PORTFOLIO_MANAGER_AVAILABLE:
+        try:
+            success = await advanced_portfolio_manager.remove_position(symbol, shares)
+            
+            if success:
+                return {
+                    "message": f"Successfully removed position for {symbol}",
+                    "symbol": symbol,
+                    "shares_sold": shares,
+                    "timestamp": datetime.datetime.now().isoformat()
+                }
+            else:
+                raise HTTPException(status_code=400, detail="Failed to remove position")
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error removing position: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Portfolio manager not available")
+
+@app.get("/api/portfolio/summary")
+async def get_portfolio_summary():
+    """Get portfolio summary information"""
+    if PORTFOLIO_MANAGER_AVAILABLE:
+        try:
+            summary = advanced_portfolio_manager.get_portfolio_summary()
+            metrics = await advanced_portfolio_manager.get_portfolio_metrics()
+            
+            return {
+                "summary": summary,
+                "performance": {
+                    "total_value": metrics.total_value,
+                    "total_return": metrics.total_pnl_percent,
+                    "sharpe_ratio": metrics.sharpe_ratio,
+                    "max_drawdown": metrics.max_drawdown
+                },
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get portfolio summary: {e}")
+    
+    # Fallback mock summary
+    return {
+        "summary": {
+            "initial_capital": 1000000,
+            "cash_balance": 50000,
+            "positions_count": 5,
+            "trades_executed": 25
+        },
+        "performance": {
+            "total_value": 1050000,
+            "total_return": 5.0,
+            "sharpe_ratio": 1.65,
+            "max_drawdown": 8.2
+        },
+        "timestamp": datetime.datetime.now().isoformat()
     }
 
 # Data Management API
@@ -958,10 +1591,30 @@ async def confirm_payment(payment_intent_id: str):
         
         if result['success']:
             # In real app, update user subscription in database
+            subscription_tier = result.get('metadata', {}).get('tier', 'pro')
+            
+            # Send payment confirmation notification
+            if NOTIFICATION_SYSTEM_AVAILABLE:
+                try:
+                    await payment_notifications.on_payment_successful(
+                        user_id=f"user_{payment_intent_id}",
+                        payment_data={
+                            'user_name': 'Customer',  # Would get from user database
+                            'user_email': 'customer@example.com',  # Would get from payment data
+                            'amount': result['amount_received'] / 100,  # Convert from cents
+                            'currency': result['currency'].upper(),
+                            'transaction_id': payment_intent_id,
+                            'new_balance': result['amount_received'] / 100,
+                            'tier': subscription_tier
+                        }
+                    )
+                except Exception as e:
+                    print(f"Payment notification failed: {e}")
+            
             return {
                 'success': True,
                 'message': 'Payment confirmed and subscription activated',
-                'subscription_tier': result.get('metadata', {}).get('tier', 'pro'),
+                'subscription_tier': subscription_tier,
                 'amount': result['amount_received'],
                 'currency': result['currency']
             }
@@ -1144,83 +1797,373 @@ async def get_storage_usage(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Trading Environment API
+# Cache Management API
+@app.get("/api/cache/health")
+async def get_cache_health():
+    """Get cache service health status"""
+    if REDIS_CACHE_AVAILABLE:
+        try:
+            health_status = await redis_cache_service.health_check()
+            return {
+                "cache_service": "available",
+                "health": health_status,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            return {
+                "cache_service": "error",
+                "error": str(e),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+    else:
+        return {
+            "cache_service": "unavailable",
+            "message": "Redis cache service not initialized",
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.get("/api/cache/metrics")
+async def get_cache_metrics():
+    """Get cache performance metrics"""
+    if REDIS_CACHE_AVAILABLE:
+        try:
+            metrics = await redis_cache_service.get_cache_metrics()
+            return {
+                "metrics": {
+                    "total_requests": metrics.total_requests,
+                    "cache_hits": metrics.cache_hits,
+                    "cache_misses": metrics.cache_misses,
+                    "hit_rate_percent": metrics.hit_rate,
+                    "avg_response_time_ms": metrics.avg_response_time_ms,
+                    "memory_usage_mb": metrics.memory_usage_mb,
+                    "keys_count": metrics.keys_count,
+                    "total_data_mb": metrics.total_data_mb
+                },
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get cache metrics: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Cache service not available")
+
+@app.post("/api/cache/warm")
+async def warm_cache():
+    """Pre-warm cache with frequently accessed data"""
+    if REDIS_CACHE_AVAILABLE:
+        try:
+            # Define symbols and models to warm up
+            symbols = ['CBA.AX', 'WBC.AX', 'BHP.AX', 'CSL.AX', 'ANZ.AX']
+            model_ids = ['lstm_alpha158', 'lightgbm_multi_factor', 'lstm_momentum']
+            
+            await redis_cache_service.warm_cache(symbols, model_ids)
+            
+            return {
+                "message": "Cache warming initiated successfully",
+                "symbols": len(symbols),
+                "models": len(model_ids),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Cache warming failed: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Cache service not available")
+
+@app.delete("/api/cache/clear/{category}")
+async def clear_cache_category(category: str):
+    """Clear all cache entries for a specific category"""
+    if REDIS_CACHE_AVAILABLE:
+        try:
+            # Validate category
+            valid_categories = ['prediction', 'market_data', 'model_performance', 'user_data', 'analytics']
+            if category not in valid_categories:
+                raise HTTPException(status_code=400, detail=f"Invalid category. Must be one of: {valid_categories}")
+            
+            deleted_count = await redis_cache_service.invalidate_category(category)
+            
+            return {
+                "message": f"Cache category '{category}' cleared successfully",
+                "deleted_entries": deleted_count,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Cache clear failed: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Cache service not available")
+
+@app.post("/api/cache/cleanup")
+async def cleanup_cache():
+    """Clean up expired cache entries"""
+    if REDIS_CACHE_AVAILABLE:
+        try:
+            await redis_cache_service.cleanup_expired_entries()
+            
+            return {
+                "message": "Cache cleanup completed successfully",
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Cache cleanup failed: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Cache service not available")
+
+# Real-Time Trading Engine API
+@app.post("/api/trading/session/start")
+async def start_trading_session():
+    """Start real-time trading session"""
+    if TRADING_ENGINE_AVAILABLE:
+        try:
+            await real_time_trading_engine.start_trading_session()
+            stats = await real_time_trading_engine.get_trading_statistics()
+            return {
+                "message": "Trading session started successfully",
+                "session": stats,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to start trading session: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Trading engine not available")
+
+@app.post("/api/trading/session/stop")
+async def stop_trading_session():
+    """Stop real-time trading session"""
+    if TRADING_ENGINE_AVAILABLE:
+        try:
+            await real_time_trading_engine.stop_trading_session()
+            stats = await real_time_trading_engine.get_trading_statistics()
+            return {
+                "message": "Trading session stopped successfully", 
+                "session": stats,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to stop trading session: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Trading engine not available")
+
+@app.get("/api/trading/signals/live")
+async def get_live_trading_signals():
+    """Get current live trading signals"""
+    if TRADING_ENGINE_AVAILABLE:
+        try:
+            signals = await real_time_trading_engine.get_active_signals()
+            return {
+                "signals": signals,
+                "total": len(signals),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get signals: {e}")
+    
+    # Fallback mock signals
+    return {
+        "signals": [
+            {
+                "signal_id": "mock-1",
+                "symbol": "CBA.AX",
+                "signal": "BUY",
+                "confidence": 0.85,
+                "price_target": 115.50,
+                "current_price": 110.50,
+                "reasoning": ["Strong technical momentum", "Positive earnings outlook"]
+            }
+        ],
+        "total": 1,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/trading/positions")
+async def get_trading_positions():
+    """Get current trading positions"""
+    if TRADING_ENGINE_AVAILABLE:
+        try:
+            positions = await real_time_trading_engine.get_positions()
+            return {
+                "positions": positions,
+                "total": len(positions),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get positions: {e}")
+    
+    # Fallback mock positions
+    return {
+        "positions": [
+            {
+                "symbol": "CBA.AX",
+                "quantity": 100,
+                "average_price": 108.50,
+                "current_price": 110.50,
+                "unrealized_pnl": 200.00,
+                "unrealized_pnl_percent": 1.84
+            }
+        ],
+        "total": 1,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/trading/orders")
+async def get_trading_orders(status: Optional[str] = None):
+    """Get trading orders, optionally filtered by status"""
+    if TRADING_ENGINE_AVAILABLE:
+        try:
+            orders = await real_time_trading_engine.get_orders(status)
+            return {
+                "orders": orders,
+                "total": len(orders),
+                "status_filter": status,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get orders: {e}")
+    
+    # Fallback mock orders
+    return {
+        "orders": [
+            {
+                "order_id": "mock-order-1",
+                "symbol": "CBA.AX",
+                "side": "BUY",
+                "quantity": 100,
+                "status": "filled",
+                "average_fill_price": 110.50
+            }
+        ],
+        "total": 1,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/trading/risk")
+async def get_trading_risk_metrics():
+    """Get current risk metrics"""
+    if TRADING_ENGINE_AVAILABLE:
+        try:
+            risk_metrics = await real_time_trading_engine.get_risk_metrics()
+            return {
+                "risk_metrics": risk_metrics,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get risk metrics: {e}")
+    
+    # Fallback mock risk metrics
+    return {
+        "risk_metrics": {
+            "portfolio_value": 1000000,
+            "total_exposure": 750000,
+            "leverage": 0.75,
+            "var_1d": 20000,
+            "max_drawdown": 0.08
+        },
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/trading/statistics")
+async def get_trading_statistics():
+    """Get trading session statistics"""
+    if TRADING_ENGINE_AVAILABLE:
+        try:
+            stats = await real_time_trading_engine.get_trading_statistics()
+            return {
+                "statistics": stats,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to get statistics: {e}")
+    
+    # Fallback mock statistics
+    return {
+        "statistics": {
+            "signals_generated": 156,
+            "signal_success_rate": 67.3,
+            "orders_placed": 45,
+            "fill_rate": 98.2,
+            "active_positions": 8
+        },
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+# Trading Environment API (Legacy - maintained for compatibility)
 @app.get("/api/trading/agents")
 async def get_trading_agents():
-    """Get all active trading agents"""
+    """Get all active trading agents (legacy endpoint)"""
     try:
         from datetime import datetime, timedelta
         
-        # Mock trading agents data
-        agents = [
-            {
-                "id": "agent-1",
-                "name": "LSTM Alpha Strategy",
-                "model_type": "LSTM",
-                "status": "running",
-                "performance": {
-                    "total_return": 12.5,
-                    "sharpe_ratio": 1.8,
-                    "win_rate": 68.2,
-                    "trades_count": 47
-                },
-                "current_position": {
-                    "symbol": "CBA.AX",
-                    "quantity": 100,
-                    "entry_price": 108.50,
-                    "current_pnl": 275.00
-                },
-                "last_signal": {
-                    "action": "HOLD",
-                    "symbol": "CBA.AX",
-                    "confidence": 0.82,
-                    "timestamp": datetime.now().isoformat()
+        # Enhanced mock agents based on real-time engine
+        agents = []
+        
+        if TRADING_ENGINE_AVAILABLE:
+            stats = await real_time_trading_engine.get_trading_statistics()
+            positions = await real_time_trading_engine.get_positions()
+            
+            # Create agents based on active models
+            if OPTIMIZED_MODEL_SERVICE_AVAILABLE:
+                performance_data = await optimized_model_service.get_model_performance()
+                for model_id, perf in performance_data.items():
+                    config = optimized_model_service.production_models.get(model_id, {})
+                    
+                    # Find associated position
+                    agent_position = None
+                    if positions:
+                        agent_position = positions[0] if positions else None
+                    
+                    agent = {
+                        "id": model_id,
+                        "name": config.get('name', model_id),
+                        "model_type": config.get('type', 'Unknown'),
+                        "status": "running" if stats.get('session_status') == 'active' else "paused",
+                        "performance": {
+                            "total_return": round((perf.avg_return - 1) * 100, 1),
+                            "sharpe_ratio": perf.sharpe_ratio,
+                            "win_rate": perf.win_rate * 100,
+                            "trades_count": random.randint(20, 100)
+                        },
+                        "current_position": {
+                            "symbol": agent_position['symbol'] if agent_position else "CBA.AX",
+                            "quantity": agent_position['quantity'] if agent_position else 0,
+                            "entry_price": agent_position['average_price'] if agent_position else 0,
+                            "current_pnl": agent_position['unrealized_pnl'] if agent_position else 0
+                        } if agent_position else None,
+                        "last_signal": {
+                            "action": random.choice(["BUY", "HOLD", "SELL"]),
+                            "symbol": agent_position['symbol'] if agent_position else "CBA.AX",
+                            "confidence": round(random.uniform(0.7, 0.95), 2),
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    }
+                    agents.append(agent)
+        
+        # Fallback if no real data
+        if not agents:
+            agents = [
+                {
+                    "id": "agent-1",
+                    "name": "LSTM Alpha Strategy",
+                    "model_type": "LSTM",
+                    "status": "running",
+                    "performance": {
+                        "total_return": 12.5,
+                        "sharpe_ratio": 1.8,
+                        "win_rate": 68.2,
+                        "trades_count": 47
+                    },
+                    "current_position": {
+                        "symbol": "CBA.AX",
+                        "quantity": 100,
+                        "entry_price": 108.50,
+                        "current_pnl": 275.00
+                    },
+                    "last_signal": {
+                        "action": "HOLD",
+                        "symbol": "CBA.AX",
+                        "confidence": 0.82,
+                        "timestamp": datetime.now().isoformat()
+                    }
                 }
-            },
-            {
-                "id": "agent-2", 
-                "name": "LightGBM Multi-Factor",
-                "model_type": "LightGBM",
-                "status": "running",
-                "performance": {
-                    "total_return": 8.7,
-                    "sharpe_ratio": 1.4,
-                    "win_rate": 71.5,
-                    "trades_count": 63
-                },
-                "current_position": {
-                    "symbol": "BHP.AX",
-                    "quantity": 200,
-                    "entry_price": 44.20,
-                    "current_pnl": 360.00
-                },
-                "last_signal": {
-                    "action": "BUY",
-                    "symbol": "RIO.AX",
-                    "confidence": 0.76,
-                    "timestamp": datetime.now().isoformat()
-                }
-            },
-            {
-                "id": "agent-3",
-                "name": "GRU Momentum",
-                "model_type": "GRU",
-                "status": "paused",
-                "performance": {
-                    "total_return": 5.2,
-                    "sharpe_ratio": 1.1,
-                    "win_rate": 64.8,
-                    "trades_count": 31
-                },
-                "current_position": None,
-                "last_signal": {
-                    "action": "SELL",
-                    "symbol": "CSL.AX",
-                    "confidence": 0.69,
-                    "timestamp": (datetime.now() - timedelta(hours=1)).isoformat()
-                }
-            }
-        ]
+            ]
         
         return {
             "agents": agents,
@@ -1299,6 +2242,468 @@ async def get_trading_activity():
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ================================
+# MODEL TRAINING API ENDPOINTS
+# ================================
+
+@app.post("/api/training/start")
+async def start_training(request: Request):
+    """Start model training with configuration"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        request_data = await request.json()
+        
+        # Validate configuration
+        validation_errors = validate_training_config(request_data)
+        if validation_errors:
+            raise HTTPException(status_code=400, detail={
+                "message": "Configuration validation failed",
+                "errors": validation_errors
+            })
+        
+        # Extract user ID from auth (simplified for demo)
+        auth_header = request.headers.get("authorization", "")
+        user_id = "demo-user-1" if auth_header else None
+        
+        result = await start_model_training(request_data, user_id)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start training: {str(e)}")
+
+@app.get("/api/training/progress/{training_id}")
+async def get_training_progress_endpoint(training_id: str):
+    """Get training progress for a specific session"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        progress = await get_training_progress(training_id)
+        return progress.dict()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get progress: {str(e)}")
+
+@app.get("/api/training/sessions")
+async def get_training_sessions_endpoint(request: Request):
+    """Get all training sessions for user"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        # Extract user ID from auth (simplified for demo)
+        auth_header = request.headers.get("authorization", "")
+        user_id = "demo-user-1" if auth_header else None
+        
+        sessions = await get_all_training_sessions(user_id)
+        return sessions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get sessions: {str(e)}")
+
+@app.post("/api/training/control/{training_id}")
+async def control_training_endpoint(training_id: str, request: Request):
+    """Control training session (pause/resume/stop)"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        body = await request.json()
+        action = body.get("action", "").lower()
+        
+        if action not in ["pause", "resume", "stop"]:
+            raise HTTPException(status_code=400, detail="Invalid action. Must be 'pause', 'resume', or 'stop'")
+        
+        result = await control_training(training_id, action)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to control training: {str(e)}")
+
+@app.get("/api/training/logs/{training_id}")
+async def get_training_logs_endpoint(training_id: str, limit: int = 100):
+    """Get training logs for a session"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        logs = await get_training_logs(training_id, limit)
+        return logs
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get logs: {str(e)}")
+
+@app.get("/api/training/performance/{training_id}")
+async def get_model_performance_endpoint(training_id: str):
+    """Get comprehensive model performance metrics"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        performance = await get_model_performance(training_id)
+        return performance.dict()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get performance: {str(e)}")
+
+@app.get("/api/training/model-types")
+async def get_model_types_endpoint():
+    """Get available model types and configurations"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        model_types = await get_available_model_types()
+        return model_types
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get model types: {str(e)}")
+
+@app.get("/api/training/statistics")
+async def get_training_stats_endpoint():
+    """Get training statistics and system status"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        stats = await get_training_statistics()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
+
+@app.post("/api/training/validate-config")
+async def validate_training_config_endpoint(request: Request):
+    """Validate training configuration without starting training"""
+    if not MODEL_TRAINING_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Model training service not available")
+    
+    try:
+        request_data = await request.json()
+        validation_errors = validate_training_config(request_data)
+        
+        return {
+            "valid": len(validation_errors) == 0,
+            "errors": validation_errors,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+
+# Enhanced WebSocket endpoint for training progress
+@app.websocket("/ws/training/{training_id}")
+async def websocket_training_progress(websocket: WebSocket, training_id: str):
+    """WebSocket endpoint for real-time training progress updates"""
+    if WEBSOCKET_AVAILABLE and MODEL_TRAINING_AVAILABLE:
+        await websocket.accept()
+        try:
+            while True:
+                # Send current progress
+                progress = await get_training_progress(training_id)
+                if progress:
+                    await websocket.send_json({
+                        "type": "training_progress",
+                        "training_id": training_id,
+                        "data": progress.dict()
+                    })
+                
+                # Wait before next update
+                await asyncio.sleep(2)  # Update every 2 seconds
+                
+        except WebSocketDisconnect:
+            pass
+        except Exception as e:
+            print(f"Training WebSocket error: {e}")
+            await websocket.close()
+    else:
+        await websocket.close()
+
+# ================================
+# ENHANCED MARKET DATA API ENDPOINTS
+# ================================
+
+@app.get("/api/market/live/quotes")
+async def get_live_quotes(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,ANZ.AX"):
+    """Get live market quotes with enhanced data"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            symbol_list = [s.strip() for s in symbols.split(",")]
+            quotes = []
+            
+            for symbol in symbol_list:
+                # Get real-time data from live engine
+                data_point = await live_market_engine.get_realtime_data(symbol)
+                if data_point:
+                    quote = {
+                        "symbol": symbol,
+                        "price": data_point.close,
+                        "change": data_point.close - data_point.open,
+                        "change_percent": ((data_point.close - data_point.open) / data_point.open) * 100,
+                        "volume": data_point.volume,
+                        "bid": data_point.bid,
+                        "ask": data_point.ask,
+                        "spread": data_point.spread,
+                        "high": data_point.high,
+                        "low": data_point.low,
+                        "open": data_point.open,
+                        "asset_class": data_point.asset_class.value,
+                        "source": data_point.source,
+                        "last_updated": datetime.datetime.fromtimestamp(data_point.timestamp).isoformat()
+                    }
+                    quotes.append(quote)
+            
+            return {
+                "quotes": quotes,
+                "total": len(quotes),
+                "market_status": live_market_engine.get_market_status().value,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"Error getting live quotes: {e}")
+    
+    # Fallback to existing quotes endpoint
+    return await get_quotes(symbols)
+
+@app.get("/api/market/live/historical/{symbol}")
+async def get_live_historical_data(symbol: str, days: int = 30):
+    """Get historical data with enhanced features"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            data_points = await live_market_engine.get_historical_data(symbol, days)
+            
+            # Convert to API format
+            historical_data = []
+            for point in data_points:
+                historical_data.append({
+                    "date": datetime.datetime.fromtimestamp(point.timestamp).strftime('%Y-%m-%d'),
+                    "timestamp": point.timestamp,
+                    "open": point.open,
+                    "high": point.high,
+                    "low": point.low,
+                    "close": point.close,
+                    "volume": point.volume,
+                    "asset_class": point.asset_class.value,
+                    "source": point.source
+                })
+            
+            return {
+                "symbol": symbol,
+                "days": days,
+                "data": historical_data,
+                "count": len(historical_data),
+                "asset_class": data_points[0].asset_class.value if data_points else "equity",
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"Error getting live historical data: {e}")
+    
+    # Fallback to existing historical endpoint
+    return await get_historical_data(symbol, f"{days}d")
+
+@app.get("/api/market/indicators/{symbol}")
+async def get_technical_indicators(symbol: str):
+    """Get technical indicators for a symbol"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            indicators = live_market_engine.get_current_indicators(symbol)
+            
+            # Convert to API format
+            formatted_indicators = {}
+            for indicator_type, indicator in indicators.items():
+                formatted_indicators[indicator_type] = {
+                    "value": indicator.value,
+                    "timestamp": indicator.timestamp,
+                    "params": indicator.params
+                }
+            
+            return {
+                "symbol": symbol,
+                "indicators": formatted_indicators,
+                "count": len(formatted_indicators),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"Error getting technical indicators: {e}")
+    
+    # Fallback mock indicators
+    return {
+        "symbol": symbol,
+        "indicators": {
+            "SMA_20": {"value": 110.25, "timestamp": time.time(), "params": {"period": 20}},
+            "RSI_14": {"value": 65.8, "timestamp": time.time(), "params": {"period": 14}},
+            "MACD": {"value": 1.2, "timestamp": time.time(), "params": {"fast": 12, "slow": 26}}
+        },
+        "count": 3,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/market/signals/{symbol}")
+async def get_trading_signals_for_symbol(symbol: str):
+    """Get AI trading signals for a specific symbol"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            signals = live_market_engine.get_current_signals(symbol)
+            
+            # Convert to API format
+            formatted_signals = []
+            for signal in signals:
+                formatted_signals.append({
+                    "id": signal.id,
+                    "symbol": signal.symbol,
+                    "signal_type": signal.signal_type,
+                    "confidence": signal.confidence,
+                    "price_target": signal.price_target,
+                    "current_price": signal.current_price,
+                    "reasoning": signal.reasoning,
+                    "strength": signal.strength,
+                    "signal_category": signal.signal_category,
+                    "timestamp": datetime.datetime.fromtimestamp(signal.timestamp).isoformat()
+                })
+            
+            return {
+                "symbol": symbol,
+                "signals": formatted_signals,
+                "count": len(formatted_signals),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"Error getting trading signals: {e}")
+    
+    # Fallback mock signals
+    return {
+        "symbol": symbol,
+        "signals": [
+            {
+                "id": f"signal_{int(time.time())}",
+                "symbol": symbol,
+                "signal_type": random.choice(["BUY", "SELL", "HOLD"]),
+                "confidence": round(random.uniform(0.7, 0.95), 2),
+                "price_target": round(random.uniform(100, 200), 2),
+                "current_price": round(random.uniform(95, 195), 2),
+                "reasoning": ["Technical analysis", "Market momentum"],
+                "strength": "STRONG",
+                "signal_category": "ENTRY",
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        ],
+        "count": 1,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/market/multi-asset/symbols")
+async def get_supported_symbols():
+    """Get all supported symbols across asset classes"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            symbols = multi_asset_service.get_supported_symbols()
+            return {
+                "symbols": symbols,
+                "total_symbols": sum(len(symbols_list) for symbols_list in symbols.values()),
+                "asset_classes": list(symbols.keys()),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"Error getting supported symbols: {e}")
+    
+    # Fallback mock symbols
+    return {
+        "symbols": {
+            "equity": ["CBA.AX", "BHP.AX", "CSL.AX", "WBC.AX", "ANZ.AX"],
+            "cryptocurrency": ["BTC.AX", "ETH.AX", "ADA.AX"],
+            "commodity": ["GOLD", "SILVER", "OIL.WTI"],
+            "fixed_income": ["AGB.2Y", "AGB.5Y", "AGB.10Y"],
+            "forex": ["AUDUSD", "EURAUD", "GBPAUD"]
+        },
+        "total_symbols": 18,
+        "asset_classes": ["equity", "cryptocurrency", "commodity", "fixed_income", "forex"],
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/market/multi-asset/data/{symbol}")
+async def get_multi_asset_data(symbol: str):
+    """Get comprehensive data for any asset class"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            # Detect asset class and get appropriate data
+            asset_class = multi_asset_service._detect_asset_class(symbol)
+            data = await multi_asset_service.get_realtime_data(symbol, asset_class)
+            
+            if data:
+                return {
+                    "symbol": symbol,
+                    "asset_class": asset_class.value,
+                    "data": data.__dict__ if hasattr(data, '__dict__') else data,
+                    "timestamp": datetime.datetime.now().isoformat()
+                }
+        except Exception as e:
+            print(f"Error getting multi-asset data: {e}")
+    
+    # Fallback to regular quote
+    return await get_quote(symbol)
+
+@app.get("/api/market/websocket/stats")
+async def get_websocket_market_stats():
+    """Get WebSocket market service statistics"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            stats = websocket_market_service.get_service_stats()
+            return {
+                "service_stats": stats,
+                "engine_status": "running" if live_market_engine.running else "stopped",
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            print(f"Error getting WebSocket stats: {e}")
+    
+    return {
+        "service_stats": {"message": "Live market engine not available"},
+        "engine_status": "unavailable",
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.post("/api/market/engine/start")
+async def start_market_engine():
+    """Start the live market data engine"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            await live_market_engine.start()
+            await websocket_market_service.start()
+            await multi_asset_service.start()
+            
+            return {
+                "message": "Live market data engine started successfully",
+                "services": ["live_market_engine", "websocket_market_service", "multi_asset_service"],
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to start market engine: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Live market engine not available")
+
+@app.post("/api/market/engine/stop")
+async def stop_market_engine():
+    """Stop the live market data engine"""
+    if LIVE_MARKET_ENGINE_AVAILABLE:
+        try:
+            await live_market_engine.stop()
+            await websocket_market_service.stop()
+            await multi_asset_service.stop()
+            
+            return {
+                "message": "Live market data engine stopped successfully",
+                "services": ["live_market_engine", "websocket_market_service", "multi_asset_service"],
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to stop market engine: {e}")
+    else:
+        raise HTTPException(status_code=503, detail="Live market engine not available")
 
 if __name__ == "__main__":
     print("Starting Qlib Pro Production API...")

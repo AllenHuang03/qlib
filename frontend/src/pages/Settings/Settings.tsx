@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -11,14 +11,56 @@ import {
   FormControlLabel,
   Divider,
   Alert,
+  Tabs,
+  Tab,
 } from '@mui/material';
+import { TestingScenarioRunner } from '../../components/TestingScenarios';
+import { useAuthStore } from '../../store/authStore';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`settings-tabpanel-${index}`}
+      aria-labelledby={`settings-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 export default function Settings() {
+  const [tabValue, setTabValue] = useState(0);
+  const { isTestAccount } = useAuthStore();
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   return (
     <Box>
       <Typography variant="h4" component="h1" fontWeight="bold" sx={{ mb: 3 }}>
         Settings
       </Typography>
+
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={tabValue} onChange={handleTabChange} aria-label="settings tabs">
+          <Tab label="Platform Settings" />
+          {isTestAccount && <Tab label="Testing Scenarios" />}
+        </Tabs>
+      </Box>
+
+      <TabPanel value={tabValue} index={0}>
 
       <Grid container spacing={3}>
         {/* General Settings */}
@@ -262,6 +304,13 @@ export default function Settings() {
           </Box>
         </Grid>
       </Grid>
+      </TabPanel>
+
+      {isTestAccount && (
+        <TabPanel value={tabValue} index={1}>
+          <TestingScenarioRunner />
+        </TabPanel>
+      )}
     </Box>
   );
 }

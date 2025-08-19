@@ -1,0 +1,50 @@
+{
+  "valid_small_portfolio": {
+    "status": "success",
+    "file_path": "test_data\\test_portfolio_small.csv",
+    "description": "10 ASX holdings, valid format",
+    "expected_result": "success",
+    "test_account": "verified@test.com",
+    "row_count": 10
+  },
+  "large_institutional_portfolio": {
+    "status": "success",
+    "file_path": "test_data\\test_portfolio_10k_holdings.csv",
+    "description": "10,000+ positions across multiple asset classes",
+    "expected_result": "success",
+    "test_account": "institution@test.com",
+    "row_count": 10000
+  },
+  "malformed_csv": {
+    "status": "success",
+    "file_path": "test_data\\test_portfolio_malformed.csv",
+    "description": "Missing columns, invalid data types",
+    "expected_result": "validation_error",
+    "test_account": "verified@test.com",
+    "row_count": 20
+  },
+  "mixed_asset_classes": {
+    "status": "success",
+    "file_path": "test_data\\test_portfolio_mixed_assets.csv",
+    "description": "Stocks, bonds, ETFs, REITs across asset classes",
+    "expected_result": "success",
+    "test_account": "premium@test.com",
+    "row_count": 50
+  },
+  "edge_cases": {
+    "status": "success",
+    "file_path": "test_data\\test_portfolio_edge_cases.csv",
+    "description": "Edge cases: very small/large positions, unusual symbols",
+    "expected_result": "warning",
+    "test_account": "verified@test.com",
+    "row_count": 25
+  },
+  "performance_test": {
+    "status": "success",
+    "file_path": "test_data\\test_portfolio_performance.csv",
+    "description": "100MB+ file for performance testing",
+    "expected_result": "success",
+    "test_account": "institution@test.com",
+    "row_count": 100000
+  }
+}

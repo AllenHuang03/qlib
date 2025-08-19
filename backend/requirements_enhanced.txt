@@ -1,0 +1,36 @@
+# Enhanced Market Data Service Dependencies
+# OpenBB SDK for comprehensive market data
+openbb>=4.0.0
+
+# Redis for high-performance caching
+redis>=4.6.0
+hiredis>=2.2.3
+
+# Async HTTP for parallel data fetching
+aiohttp>=3.8.0
+httpx>=0.25.0
+
+# Data processing and analysis
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Financial data sources
+yfinance>=0.2.18
+alpha-vantage>=2.3.1
+
+# Sentiment analysis and NLP
+textblob>=0.17.1
+vaderSentiment>=3.3.2
+
+# Time series analysis
+ta-lib>=0.4.26
+plotly>=5.17.0
+
+# Performance monitoring
+psutil>=5.9.0
+memory-profiler>=0.61.0
+
+# Production logging and monitoring
+structlog>=23.1.0
+prometheus-client>=0.17.0

@@ -4,6 +4,10 @@ import { useAuthStore } from '../../store/authStore';
 import CustomerDashboard from './CustomerDashboard';
 import TraderDashboard from './TraderDashboard';
 import AdminDashboard from './AdminDashboard';
+import EnterpriseAdminDashboard from './EnterpriseAdminDashboard';
+import KYCStaffDashboard from './KYCStaffDashboard';
+import TradingAgentDashboard from './TradingAgentDashboard';
+import SupportStaffDashboard from './SupportStaffDashboard';
 import KYCModal from '../../components/KYC/KYCModal';
 
 const Dashboard: React.FC = () => {
@@ -28,8 +32,23 @@ const Dashboard: React.FC = () => {
     setKycModalOpen(false);
   };
 
-  // Route to appropriate dashboard based on user role
+  // Route to appropriate dashboard based on user role and type
   const renderDashboard = () => {
+    // For staff members, route based on userType
+    if (user?.userType) {
+      switch (user.userType) {
+        case 'kyc_staff':
+          return <KYCStaffDashboard user={user} />;
+        case 'trading_agent':
+          return <TradingAgentDashboard user={user} />;
+        case 'admin':
+          return <EnterpriseAdminDashboard user={user} />;
+        case 'support_staff':
+          return <SupportStaffDashboard user={user} />;
+      }
+    }
+
+    // Fallback to role-based routing for regular users
     switch (user?.role) {
       case 'admin':
         return <AdminDashboard user={user} />;

@@ -31,6 +31,8 @@ import {
   Logout,
   People,
   VerifiedUser,
+  Speed,
+  ShowChart,
 } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -50,37 +52,86 @@ export default function Layout({ children }: LayoutProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  // Dynamic menu items based on user role
+  // Dynamic menu items based on user role and type
   const getMenuItems = () => {
     const userRole = user?.role || "customer";
+    const userType = user?.userType || "retail_customer";
 
     if (userRole === "admin") {
       return [
         { text: "System Overview", icon: <Dashboard />, path: "/dashboard" },
         { text: "User Management", icon: <People />, path: "/admin" },
-        { text: "Security", icon: <VerifiedUser />, path: "/admin" },
+        { text: "Security & Monitoring", icon: <VerifiedUser />, path: "/admin" },
         { text: "System Settings", icon: <Settings />, path: "/settings" },
       ];
     }
 
-    if (userRole === "trader") {
+    if (userRole === "staff") {
+      // KYC staff, support staff, etc.
+      if (userType === "kyc_staff") {
+        return [
+          { text: "KYC Dashboard", icon: <Dashboard />, path: "/dashboard" },
+          { text: "Customer Reviews", icon: <VerifiedUser />, path: "/admin" },
+          { text: "Compliance Tools", icon: <Assessment />, path: "/admin" },
+          { text: "Settings", icon: <Settings />, path: "/settings" },
+        ];
+      }
+      if (userType === "support_staff") {
+        return [
+          { text: "Support Dashboard", icon: <Dashboard />, path: "/dashboard" },
+          { text: "Customer Accounts", icon: <People />, path: "/admin" },
+          { text: "Tickets & Issues", icon: <Assessment />, path: "/admin" },
+          { text: "Knowledge Base", icon: <Storage />, path: "/data" },
+        ];
+      }
+      // Default staff navigation
       return [
-        { text: "Trading Center", icon: <Dashboard />, path: "/dashboard" },
-        {
-          text: "Trading Environment",
-          icon: <Assessment />,
-          path: "/trading-environment",
-        },
-        { text: "Trader Agents", icon: <People />, path: "/trader-agents" },
-        { text: "Models", icon: <TrendingUp />, path: "/models" },
-        { text: "Backtesting", icon: <Assessment />, path: "/backtesting" },
-        { text: "Portfolio", icon: <AccountBalance />, path: "/portfolio" },
-        { text: "Data", icon: <Storage />, path: "/data" },
+        { text: "Staff Dashboard", icon: <Dashboard />, path: "/dashboard" },
+        { text: "User Management", icon: <People />, path: "/admin" },
         { text: "Settings", icon: <Settings />, path: "/settings" },
       ];
     }
 
-    // Customer role (default) - simplified navigation, hide advanced features
+    if (userRole === "trader") {
+      if (userType === "institutional") {
+        return [
+          { text: "Institutional Center", icon: <Dashboard />, path: "/dashboard" },
+          { text: "Multi-Asset Trading", icon: <Assessment />, path: "/trading-environment" },
+          { text: "Risk Management", icon: <VerifiedUser />, path: "/portfolio" },
+          { text: "Compliance", icon: <Storage />, path: "/data" },
+          { text: "Advanced Models", icon: <TrendingUp />, path: "/models" },
+          { text: "Backtesting", icon: <Assessment />, path: "/backtesting" },
+          { text: "Settings", icon: <Settings />, path: "/settings" },
+        ];
+      }
+      // Professional trader navigation
+      return [
+        { text: "Trading Center", icon: <Dashboard />, path: "/dashboard" },
+        { text: "Live Trading Pro", icon: <Speed />, path: "/live-trading" },
+        { text: "Trading Environment", icon: <Assessment />, path: "/trading-environment" },
+        { text: "Trader Agents", icon: <People />, path: "/trader-agents" },
+        { text: "Models", icon: <TrendingUp />, path: "/models" },
+        { text: "Backtesting", icon: <Assessment />, path: "/backtesting" },
+        { text: "Portfolio", icon: <AccountBalance />, path: "/portfolio" },
+        { text: "Data Management", icon: <Storage />, path: "/data" },
+        { text: "Settings", icon: <Settings />, path: "/settings" },
+      ];
+    }
+
+    // Customer role - navigation based on customer type and experience
+    if (userType === "premium_customer") {
+      return [
+        { text: "Premium Dashboard", icon: <Dashboard />, path: "/dashboard" },
+        { text: "Live Trading", icon: <ShowChart />, path: "/live-trading" },
+        { text: "AI Insights Pro", icon: <TrendingUp />, path: "/insights" },
+        { text: "Advanced Portfolio", icon: <AccountBalance />, path: "/portfolio" },
+        { text: "Trading Environment", icon: <Assessment />, path: "/trading-environment" },
+        { text: "Market Analysis", icon: <Storage />, path: "/data" },
+        { text: "Community", icon: <People />, path: "/community" },
+      ];
+    }
+
+    // Default customer navigation (retail_customer or basic)
     return [
       { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
       { text: "AI Insights", icon: <TrendingUp />, path: "/insights" },

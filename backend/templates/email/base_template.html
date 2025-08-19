@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{title}} - Qlib Pro</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f8f9fa;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        
+        table {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        
+        img {
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+            -ms-interpolation-mode: bicubic;
+        }
+        
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .email-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .email-header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .email-header p {
+            font-size: 16px;
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        /* Logo */
+        .logo {
+            display: inline-block;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 10px;
+        }
+        
+        /* Content */
+        .email-content {
+            padding: 40px 30px;
+        }
+        
+        .email-content h2 {
+            color: #333333;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 20px 0;
+        }
+        
+        .email-content h3 {
+            color: #555555;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0 15px 0;
+        }
+        
+        .email-content p {
+            color: #666666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0 0 20px 0;
+        }
+        
+        .email-content ul {
+            margin: 0 0 20px 20px;
+            padding: 0;
+        }
+        
+        .email-content li {
+            color: #666666;
+            font-size: 16px;
+            margin: 8px 0;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #5a6fd8;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .info-box.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .info-box.warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        
+        .info-box.danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .info-box.info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
+        /* Data table */
+        .data-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .data-table td {
+            color: #666666;
+        }
+        
+        /* Footer */
+        .email-footer {
+            background-color: #f8f9fa;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .email-footer h4 {
+            color: #495057;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+        
+        .email-footer p {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        
+        /* Compliance section */
+        .compliance {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 12px;
+            color: #868e96;
+        }
+        
+        .compliance a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .compliance a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Social links */
+        .social-links {
+            margin: 15px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #6c757d;
+            font-size: 20px;
+            text-decoration: none;
+        }
+        
+        /* Mobile responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+            
+            .email-header,
+            .email-content,
+            .email-footer {
+                padding-left: 20px !important;
+                padding-right: 20px !important;
+            }
+            
+            .email-header h1 {
+                font-size: 24px !important;
+            }
+            
+            .email-content h2 {
+                font-size: 20px !important;
+            }
+            
+            .btn {
+                display: block !important;
+                width: 100% !important;
+                margin: 10px 0 !important;
+                box-sizing: border-box !important;
+            }
+            
+            .data-table {
+                font-size: 14px !important;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px 10px !important;
+            }
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .email-header {
+                background: #000000 !important;
+                color: #ffffff !important;
+            }
+            
+            .btn-primary {
+                background-color: #000000 !important;
+                border: 2px solid #ffffff !important;
+            }
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .email-container {
+                background-color: #1a1a1a !important;
+                color: #ffffff !important;
+            }
+            
+            .email-content p,
+            .email-content li {
+                color: #cccccc !important;
+            }
+            
+            .email-footer {
+                background-color: #2a2a2a !important;
+                color: #cccccc !important;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            .email-container {
+                box-shadow: none !important;
+                border: 1px solid #cccccc !important;
+            }
+            
+            .btn {
+                border: 1px solid #000000 !important;
+                color: #000000 !important;
+                background-color: #ffffff !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="email-header">
+            <a href="https://qlibpro.com.au" class="logo">Qlib Pro</a>
+            {% if header_title %}
+                <h1>{{header_title}}</h1>
+            {% endif %}
+            {% if header_subtitle %}
+                <p>{{header_subtitle}}</p>
+            {% endif %}
+        </div>
+        
+        <!-- Content -->
+        <div class="email-content">
+            {% block content %}
+            <!-- Template-specific content goes here -->
+            {% endblock %}
+        </div>
+        
+        <!-- Footer -->
+        <div class="email-footer">
+            <h4>{{company_name}}</h4>
+            <p>{{company_address}}</p>
+            <p>{{abn}} | {{afsl}}</p>
+            
+            <div class="social-links">
+                <a href="https://twitter.com/qlibpro" title="Twitter">🐦</a>
+                <a href="https://linkedin.com/company/qlibpro" title="LinkedIn">💼</a>
+                <a href="https://facebook.com/qlibpro" title="Facebook">📘</a>
+            </div>
+            
+            <div class="compliance">
+                <p>This communication is issued by {{company_name}}, holder of Australian Financial Services Licence {{afsl}}. 
+                   Please consider our <a href="{{website}}/fsg">Financial Services Guide</a> and 
+                   <a href="{{website}}/pds">Product Disclosure Statement</a> before making investment decisions.</p>
+                
+                <p>The information contained in this email is general in nature and does not constitute personal financial advice. 
+                   Past performance does not guarantee future results. All investments carry risk.</p>
+                
+                <p>You are receiving this email because you have an account with {{company_name}}. 
+                   To manage your notification preferences, <a href="{{website}}/preferences">click here</a>. 
+                   To unsubscribe from marketing emails, <a href="{{unsubscribe_url}}?token={{unsubscribe_token}}">click here</a>.</p>
+                
+                <p><a href="{{privacy_policy_url}}">Privacy Policy</a> | 
+                   <a href="{{terms_url}}">Terms of Service</a> | 
+                   <a href="{{website}}/contact">Contact Us</a></p>
+                
+                <p>© {{current_year}} {{company_name}}. All rights reserved.</p>
+                
+                <p><small>Email sent on {{timestamp}}</small></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

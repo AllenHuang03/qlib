@@ -561,6 +561,78 @@ export const marketAPI = {
   getASXSectors: async () => {
     const response = await api.get('/market/asx-sectors');
     return response.data;
+  },
+
+  // Enhanced Live Market Data APIs
+  getLiveQuotes: async (symbols: string[]) => {
+    const symbolsParam = symbols.join(',');
+    const response = await api.get(`/market/live/quotes?symbols=${symbolsParam}`);
+    return response.data;
+  },
+
+  getLiveHistoricalData: async (symbol: string, days: number = 30) => {
+    const response = await api.get(`/market/live/historical/${symbol}?days=${days}`);
+    return response.data;
+  },
+
+  getTechnicalIndicators: async (symbol: string) => {
+    const response = await api.get(`/market/indicators/${symbol}`);
+    return response.data;
+  },
+
+  getTradingSignals: async (symbol: string) => {
+    const response = await api.get(`/market/signals/${symbol}`);
+    return response.data;
+  },
+
+  // Multi-Asset APIs
+  getSupportedSymbols: async () => {
+    const response = await api.get('/market/multi-asset/symbols');
+    return response.data;
+  },
+
+  getMultiAssetData: async (symbol: string) => {
+    const response = await api.get(`/market/multi-asset/data/${symbol}`);
+    return response.data;
+  },
+
+  // WebSocket Service Stats
+  getWebSocketStats: async () => {
+    const response = await api.get('/market/websocket/stats');
+    return response.data;
+  },
+
+  // Market Engine Control
+  startMarketEngine: async () => {
+    const response = await api.post('/market/engine/start');
+    return response.data;
+  },
+
+  stopMarketEngine: async () => {
+    const response = await api.post('/market/engine/stop');
+    return response.data;
+  },
+
+  // Enhanced Market Data (fallback-compatible)
+  getRealTimeData: async (symbols: string[]) => {
+    const symbolsParam = symbols.join(',');
+    const response = await api.get(`/market/real-time?symbols=${symbolsParam}`);
+    return response.data;
+  },
+
+  getMarketIndices: async () => {
+    const response = await api.get('/market/indices');
+    return response.data;
+  },
+
+  getSectorPerformance: async () => {
+    const response = await api.get('/market/sectors');
+    return response.data;
+  },
+
+  getMarketSentiment: async (symbol: string) => {
+    const response = await api.get(`/market/sentiment/${symbol}`);
+    return response.data;
   }
 };
 

@@ -32,7 +32,13 @@
       "Bash(mkdir:*)",
       "Bash(start http://localhost:5173)",
       "Bash(node:*)",
-      "Bash(start http://localhost:3004/debug-layout)"
+      "Bash(start http://localhost:3004/debug-layout)",
+      "Bash(pkill:*)",
+      "Bash(tasklist)",
+      "Bash(for file in *.py)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }
