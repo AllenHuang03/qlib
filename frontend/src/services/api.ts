@@ -1,9 +1,8 @@
 import axios, { AxiosResponse } from 'axios';
 
-// Use environment variable or fallback to mock mode
-// Force local development for debugging (remove this override for production)
-const API_BASE_URL = 'http://localhost:8001';
-const USE_MOCK_MODE = !API_BASE_URL;
+// Use environment variable for API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+const USE_MOCK_MODE = false; // Disable mock mode for production
 
 // Debug logging for troubleshooting
 console.log('🔍 API Configuration Debug:', {

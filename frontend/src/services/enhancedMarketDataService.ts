@@ -110,11 +110,9 @@ class EnhancedMarketDataService {
       try {
         this.performance.connectionStatus = 'connecting';
         
-        // Determine WebSocket URL
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.hostname;
-        const port = process.env.NODE_ENV === 'development' ? '8001' : window.location.port;
-        const wsUrl = `${protocol}//${host}:${port}/ws/live-market`;
+        // Determine WebSocket URL from environment variables
+        const baseWsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8001';
+        const wsUrl = `${baseWsUrl}/ws/live-market`;
 
         this.wsConnection = new WebSocket(wsUrl);
 

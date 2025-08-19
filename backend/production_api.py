@@ -16,6 +16,7 @@ import random
 import os
 import requests
 import io
+import time
 from contextlib import asynccontextmanager
 
 # Import Monitoring System
@@ -223,6 +224,41 @@ class Dataset(BaseModel):
     lastUpdate: str
     status: str
     records: str
+
+# Helper Functions
+def generate_mock_historical_data(symbol: str, days: int = 30):
+    """Generate mock historical data for testing"""
+    base_price = 100.0 + hash(symbol) % 50  # Deterministic base price per symbol
+    historical_data = []
+    
+    for i in range(days):
+        date = datetime.datetime.now() - datetime.timedelta(days=days-i-1)
+        # Generate realistic price movements
+        price_change = (random.random() - 0.5) * 0.05  # ±2.5% daily change
+        price = base_price * (1 + price_change * i * 0.1)
+        
+        historical_data.append({
+            "date": date.strftime('%Y-%m-%d'),
+            "timestamp": date.timestamp(),
+            "open": round(price * (1 + (random.random() - 0.5) * 0.01), 2),
+            "high": round(price * (1 + abs(random.random()) * 0.02), 2),
+            "low": round(price * (1 - abs(random.random()) * 0.02), 2),
+            "close": round(price, 2),
+            "volume": random.randint(100000, 1000000)
+        })
+    
+    return historical_data
+
+def generate_mock_indicators(symbol: str):
+    """Generate mock technical indicators"""
+    return {
+        "sma_20": {"value": 105.50, "timestamp": datetime.datetime.now().timestamp()},
+        "sma_50": {"value": 103.25, "timestamp": datetime.datetime.now().timestamp()},
+        "rsi": {"value": random.uniform(30, 70), "timestamp": datetime.datetime.now().timestamp()},
+        "macd": {"value": random.uniform(-2, 2), "timestamp": datetime.datetime.now().timestamp()},
+        "bollinger_upper": {"value": 108.75, "timestamp": datetime.datetime.now().timestamp()},
+        "bollinger_lower": {"value": 101.25, "timestamp": datetime.datetime.now().timestamp()},
+    }
 
 # Mock Data Storage
 MOCK_MODELS = [
@@ -2504,7 +2540,19 @@ async def get_live_historical_data(symbol: str, days: int = 30):
             print(f"Error getting live historical data: {e}")
     
     # Fallback to existing historical endpoint
-    return await get_historical_data(symbol, f"{days}d")
+    try:
+        return await get_historical_data(symbol, f"{days}d")
+    except Exception as e:
+        # Final fallback with mock data
+        return {
+            "symbol": symbol,
+            "days": days,
+            "data": generate_mock_historical_data(symbol, days),
+            "count": days,
+            "asset_class": "equity",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "source": "mock_fallback"
+        }
 
 @app.get("/api/market/indicators/{symbol}")
 async def get_technical_indicators(symbol: str):
