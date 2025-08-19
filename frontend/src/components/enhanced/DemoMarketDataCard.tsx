@@ -3,7 +3,7 @@
  * Showcases the enhanced market data features in the existing dashboard
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
   Tooltip,
   useTheme,
   LinearProgress,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Speed,
   ShowChart,
@@ -25,9 +25,9 @@ import {
   VolumeUp,
   AutoAwesome,
   OpenInNew,
-} from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { marketAPI } from '../../services/api';
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { marketAPI } from "../../services/api";
 
 interface DemoQuote {
   symbol: string;
@@ -40,19 +40,19 @@ interface DemoQuote {
 const DemoMarketDataCard: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  
+
   const [demoQuotes, setDemoQuotes] = useState<DemoQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   // Demo symbols for different asset classes
-  const demoSymbols = ['CBA.AX', 'BHP.AX', 'BTC.AX', 'GOLD'];
+  const demoSymbols = ["CBA.AX", "BHP.AX", "BTC.AX", "GOLD"];
 
   useEffect(() => {
     const loadDemoData = async () => {
       try {
         setLoading(true);
-        const mockQuotes: DemoQuote[] = demoSymbols.map(symbol => {
+        const mockQuotes: DemoQuote[] = demoSymbols.map((symbol) => {
           const basePrice = getBasePrice(symbol);
           const change = (Math.random() - 0.5) * basePrice * 0.05; // ±5% change
           return {
@@ -63,18 +63,18 @@ const DemoMarketDataCard: React.FC = () => {
             volume: Math.floor(Math.random() * 1000000) + 100000,
           };
         });
-        
+
         setDemoQuotes(mockQuotes);
         setLastUpdate(new Date());
       } catch (error) {
-        console.error('Error loading demo data:', error);
+        console.error("Error loading demo data:", error);
       } finally {
         setLoading(false);
       }
     };
 
     loadDemoData();
-    
+
     // Update demo data every 5 seconds
     const interval = setInterval(loadDemoData, 5000);
     return () => clearInterval(interval);
@@ -82,42 +82,49 @@ const DemoMarketDataCard: React.FC = () => {
 
   const getBasePrice = (symbol: string): number => {
     const basePrices = {
-      'CBA.AX': 110.50,
-      'BHP.AX': 45.20,
-      'BTC.AX': 45000.0,
-      'GOLD': 1950.0,
+      "CBA.AX": 110.5,
+      "BHP.AX": 45.2,
+      "BTC.AX": 45000.0,
+      GOLD: 1950.0,
     };
     return basePrices[symbol as keyof typeof basePrices] || 100;
   };
 
   const getAssetClassIcon = (symbol: string) => {
-    if (symbol.includes('BTC')) return '₿';
-    if (symbol === 'GOLD') return '🥇';
-    return '📈';
+    if (symbol.includes("BTC")) return "₿";
+    if (symbol === "GOLD") return "🥇";
+    return "📈";
   };
 
   const getAssetClassName = (symbol: string) => {
-    if (symbol.includes('BTC')) return 'Crypto';
-    if (symbol === 'GOLD') return 'Commodity';
-    return 'Equity';
+    if (symbol.includes("BTC")) return "Crypto";
+    if (symbol === "GOLD") return "Commodity";
+    return "Equity";
   };
 
   return (
-    <Card 
-      sx={{ 
-        height: '100%',
+    <Card
+      sx={{
+        height: "100%",
         background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.secondary.main}15 100%)`,
         border: `1px solid ${theme.palette.primary.main}30`,
-        position: 'relative',
-        overflow: 'visible',
+        position: "relative",
+        overflow: "visible",
       }}
     >
       <CardContent>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <ShowChart color="primary" />
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
               Enhanced Market Data
             </Typography>
             <Chip
@@ -125,17 +132,17 @@ const DemoMarketDataCard: React.FC = () => {
               label="LIVE"
               size="small"
               color="success"
-              sx={{ animation: 'pulse 2s infinite' }}
+              sx={{ animation: "pulse 2s infinite" }}
             />
           </Box>
-          
+
           <Tooltip title="Open Live Trading Dashboard">
-            <IconButton 
-              onClick={() => navigate('/live-trading')}
-              sx={{ 
+            <IconButton
+              onClick={() => navigate("/live-trading")}
+              sx={{
                 backgroundColor: theme.palette.primary.main,
-                color: 'white',
-                '&:hover': {
+                color: "white",
+                "&:hover": {
                   backgroundColor: theme.palette.primary.dark,
                 },
               }}
@@ -148,44 +155,54 @@ const DemoMarketDataCard: React.FC = () => {
         {/* Features Overview */}
         <Grid container spacing={1} sx={{ mb: 2 }}>
           <Grid item xs={6}>
-            <Box sx={{ 
-              textAlign: 'center', 
-              p: 1, 
-              borderRadius: 1, 
-              backgroundColor: theme.palette.success.main + '20',
-              border: `1px solid ${theme.palette.success.main}30`,
-            }}>
+            <Box
+              sx={{
+                textAlign: "center",
+                p: 1,
+                borderRadius: 1,
+                backgroundColor: theme.palette.success.main + "20",
+                border: `1px solid ${theme.palette.success.main}30`,
+              }}
+            >
               <Typography variant="caption" color="text.secondary">
                 Multi-Asset
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.palette.success.main }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: "bold", color: theme.palette.success.main }}
+              >
                 5 Classes
               </Typography>
             </Box>
           </Grid>
           <Grid item xs={6}>
-            <Box sx={{ 
-              textAlign: 'center', 
-              p: 1, 
-              borderRadius: 1, 
-              backgroundColor: theme.palette.warning.main + '20',
-              border: `1px solid ${theme.palette.warning.main}30`,
-            }}>
+            <Box
+              sx={{
+                textAlign: "center",
+                p: 1,
+                borderRadius: 1,
+                backgroundColor: theme.palette.warning.main + "20",
+                border: `1px solid ${theme.palette.warning.main}30`,
+              }}
+            >
               <Typography variant="caption" color="text.secondary">
                 Latency
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.palette.warning.main }}>
-                <50ms
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: "bold", color: theme.palette.warning.main }}
+              >
+                {"<50ms"}
               </Typography>
             </Box>
           </Grid>
         </Grid>
 
         {/* Live Quotes Demo */}
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
           Live Market Data
         </Typography>
-        
+
         {loading ? (
           <LinearProgress sx={{ mb: 2 }} />
         ) : (
@@ -194,26 +211,29 @@ const DemoMarketDataCard: React.FC = () => {
               <Box
                 key={quote.symbol}
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                   py: 0.5,
                   px: 1,
                   mb: 0.5,
                   borderRadius: 1,
                   backgroundColor: theme.palette.background.paper,
                   border: `1px solid ${theme.palette.divider}`,
-                  '&:hover': {
+                  "&:hover": {
                     backgroundColor: theme.palette.action.hover,
                   },
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography sx={{ fontSize: '16px' }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography sx={{ fontSize: "16px" }}>
                     {getAssetClassIcon(quote.symbol)}
                   </Typography>
                   <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontFamily: 'monospace' }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: "bold", fontFamily: "monospace" }}
+                    >
                       {quote.symbol}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -221,22 +241,42 @@ const DemoMarketDataCard: React.FC = () => {
                     </Typography>
                   </Box>
                 </Box>
-                
-                <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontFamily: 'monospace' }}>
-                    ${quote.price.toFixed(quote.symbol.includes('BTC') ? 0 : 2)}
+
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: "bold", fontFamily: "monospace" }}
+                  >
+                    ${quote.price.toFixed(quote.symbol.includes("BTC") ? 0 : 2)}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
-                    {quote.changePercent >= 0 ? 
-                      <TrendingUp fontSize="small" sx={{ color: theme.palette.success.main }} /> :
-                      <TrendingDown fontSize="small" sx={{ color: theme.palette.error.main }} />
-                    }
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: quote.changePercent >= 0 ? theme.palette.success.main : theme.palette.error.main,
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold',
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {quote.changePercent >= 0 ? (
+                      <TrendingUp
+                        fontSize="small"
+                        sx={{ color: theme.palette.success.main }}
+                      />
+                    ) : (
+                      <TrendingDown
+                        fontSize="small"
+                        sx={{ color: theme.palette.error.main }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color:
+                          quote.changePercent >= 0
+                            ? theme.palette.success.main
+                            : theme.palette.error.main,
+                        fontFamily: "monospace",
+                        fontWeight: "bold",
                       }}
                     >
                       {quote.changePercent.toFixed(2)}%
@@ -250,7 +290,7 @@ const DemoMarketDataCard: React.FC = () => {
 
         {/* Key Features */}
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
             Professional Features
           </Typography>
           <Grid container spacing={1}>
@@ -260,7 +300,7 @@ const DemoMarketDataCard: React.FC = () => {
                 label="AI Signals"
                 size="small"
                 variant="outlined"
-                sx={{ width: '100%' }}
+                sx={{ width: "100%" }}
               />
             </Grid>
             <Grid item xs={6}>
@@ -269,7 +309,7 @@ const DemoMarketDataCard: React.FC = () => {
                 label="Technical Analysis"
                 size="small"
                 variant="outlined"
-                sx={{ width: '100%' }}
+                sx={{ width: "100%" }}
               />
             </Grid>
             <Grid item xs={6}>
@@ -278,7 +318,7 @@ const DemoMarketDataCard: React.FC = () => {
                 label="Volume Analysis"
                 size="small"
                 variant="outlined"
-                sx={{ width: '100%' }}
+                sx={{ width: "100%" }}
               />
             </Grid>
             <Grid item xs={6}>
@@ -287,7 +327,7 @@ const DemoMarketDataCard: React.FC = () => {
                 label="Real-time Data"
                 size="small"
                 variant="outlined"
-                sx={{ width: '100%' }}
+                sx={{ width: "100%" }}
               />
             </Grid>
           </Grid>
@@ -297,11 +337,11 @@ const DemoMarketDataCard: React.FC = () => {
         <Button
           variant="contained"
           fullWidth
-          onClick={() => navigate('/live-trading')}
+          onClick={() => navigate("/live-trading")}
           sx={{
             background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
-            fontWeight: 'bold',
-            '&:hover': {
+            fontWeight: "bold",
+            "&:hover": {
               background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.secondary.dark} 90%)`,
             },
           }}
@@ -310,7 +350,11 @@ const DemoMarketDataCard: React.FC = () => {
         </Button>
 
         {/* Last Update */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", textAlign: "center", mt: 1 }}
+        >
           Last updated: {lastUpdate.toLocaleTimeString()}
         </Typography>
       </CardContent>
