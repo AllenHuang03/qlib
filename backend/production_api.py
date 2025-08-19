@@ -2758,10 +2758,12 @@ if __name__ == "__main__":
     print("Documentation: http://localhost:8001/docs")
     print("Health Check: http://localhost:8001/health")
     
+    # Railway configuration
+    port = int(os.environ.get("PORT", 8001))
     uvicorn.run(
         app,
-        host="127.0.0.1",
-        port=8001,
+        host="0.0.0.0",  # Accept external connections
+        port=port,       # Use Railway's PORT environment variable
         reload=False,
         access_log=True
     )

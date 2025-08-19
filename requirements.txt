@@ -9,8 +9,16 @@ numpy>=1.24.0
 # Supabase integration (compatible with httpx<0.25.0)
 supabase>=2.0.0
 
+# Essential for production_api.py
+requests>=2.31.0
+websockets>=11.0.0
+aiohttp>=3.8.0
+
 # Authentication
 pyotp>=2.9.0
 
 # Australian timezone support
 pytz>=2023.3
+
+# Optional monitoring (prevent import errors)
+prometheus-client>=0.17.0
