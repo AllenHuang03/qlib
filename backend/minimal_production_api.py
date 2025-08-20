@@ -15,6 +15,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
+# Import the real market data service
+try:
+    from market_data_service import market_data_service
+    REAL_DATA_AVAILABLE = True
+    print("✅ Real market data service loaded")
+except ImportError:
+    REAL_DATA_AVAILABLE = False
+    print("⚠️ Using mock data only - install market_data_service for real data")
+
 # Railway configuration - Railway uses port 8080
 PORT = int(os.environ.get("PORT", 8080))
 
@@ -91,7 +100,38 @@ async def api_health():
 # Market data endpoints with mock data
 @app.get("/api/market/quotes")
 async def get_quotes():
-    """Get mock market quotes with realistic Australian stock prices"""
+    """Get market quotes - real data when available, fallback to mock"""
+    
+    if REAL_DATA_AVAILABLE:
+        try:
+            # Use real market data service
+            symbols = ["CBA.AX", "BHP.AX", "CSL.AX", "WBC.AX", "ANZ.AX"]
+            real_data = await market_data_service.get_realtime_quotes(symbols)
+            
+            # Convert to our API format
+            quotes = []
+            for quote in real_data.get("quotes", []):
+                quotes.append(MarketQuote(
+                    symbol=quote["symbol"],
+                    price=quote["price"],
+                    change=quote["change"],
+                    change_percent=quote.get("change_percent", "0%").replace("%", ""),
+                    volume=quote["volume"],
+                    last_updated=quote.get("timestamp", datetime.datetime.now().isoformat())
+                ))
+            
+            return {
+                "quotes": quotes,
+                "total": len(quotes),
+                "timestamp": datetime.datetime.now().isoformat(),
+                "market": "ASX",
+                "data_source": f"Real Data ({real_data.get('market_status', 'unknown')})"
+            }
+            
+        except Exception as e:
+            print(f"Real data fetch failed: {e}, falling back to mock data")
+    
+    # Fallback to mock data
     quotes = []
     
     # Realistic price ranges for major ASX stocks (as of 2025)
@@ -126,7 +166,7 @@ async def get_quotes():
         "total": len(quotes),
         "timestamp": datetime.datetime.now().isoformat(),
         "market": "ASX",
-        "data_source": "Mock Data"
+        "data_source": "Mock Data (Real data unavailable)"
     }
 
 @app.get("/api/market/historical/{symbol}")
@@ -360,6 +400,67 @@ async def get_asset_class_info(symbol: str):
         "currency": "AUD",
         "exchange": "Australian Securities Exchange",
         "sector": "Financial Services" if asset_class == "equity" else asset_class.title(),
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/trading/activity")
+async def get_trading_activity():
+    """Get mock trading activity data"""
+    activities = []
+    
+    for i in range(10):
+        activities.append({
+            "id": f"trade_{i+1}",
+            "timestamp": (datetime.datetime.now() - datetime.timedelta(minutes=i*15)).isoformat(),
+            "symbol": random.choice(["CBA.AX", "BHP.AX", "CSL.AX", "WBC.AX", "ANZ.AX"]),
+            "side": random.choice(["BUY", "SELL"]),
+            "quantity": random.randint(100, 5000),
+            "price": round(random.uniform(30, 300), 2),
+            "value": 0,  # Will be calculated
+            "status": random.choice(["FILLED", "PENDING", "CANCELLED"]),
+            "type": random.choice(["MARKET", "LIMIT", "STOP"]),
+            "agent": f"Agent_{random.randint(1, 5)}"
+        })
+    
+    # Calculate values
+    for activity in activities:
+        activity["value"] = round(activity["quantity"] * activity["price"], 2)
+    
+    return {
+        "activities": activities,
+        "total": len(activities),
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+@app.get("/api/trading/agents")
+async def get_trading_agents():
+    """Get mock trading agents data"""
+    agents = []
+    
+    for i in range(5):
+        agent_id = f"Agent_{i+1}"
+        pnl = round(random.uniform(-5000, 15000), 2)
+        
+        agents.append({
+            "id": agent_id,
+            "name": f"Quantitative Agent {i+1}",
+            "status": random.choice(["ACTIVE", "PAUSED", "STOPPED"]),
+            "strategy": random.choice(["Mean Reversion", "Momentum", "Arbitrage", "Market Making", "Trend Following"]),
+            "pnl": pnl,
+            "pnl_percent": round((pnl / 100000) * 100, 2),  # Assuming $100k starting capital
+            "trades_today": random.randint(5, 50),
+            "win_rate": round(random.uniform(0.45, 0.75), 2),
+            "sharpe_ratio": round(random.uniform(0.8, 2.5), 2),
+            "max_drawdown": round(random.uniform(-0.15, -0.05), 2),
+            "last_trade": (datetime.datetime.now() - datetime.timedelta(minutes=random.randint(1, 120))).isoformat(),
+            "positions": random.randint(0, 8)
+        })
+    
+    return {
+        "agents": agents,
+        "total": len(agents),
+        "active_count": len([a for a in agents if a["status"] == "ACTIVE"]),
+        "total_pnl": sum(a["pnl"] for a in agents),
         "timestamp": datetime.datetime.now().isoformat()
     }
 
