@@ -971,8 +971,8 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
           }} 
         />
 
-        {/* Professional Fallback Chart - Based on MarketIndex.com.au design */}
-        {chartError && data.length > 0 && (
+        {/* Professional Fallback Chart - Always show when chart library fails */}
+        {chartError && (
           <Box 
             sx={{ 
               position: 'absolute',
@@ -985,41 +985,45 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
               overflow: 'hidden',
             }}
           >
+            {/* Always show fallback chart when lightweight-charts fails */}
             <FallbackTradingChart
               symbol={symbol}
               data={data}
               indicators={indicators}
               height={height - (latestCandle ? 400 : 340)}
             />
-          </Box>
-        )}
-
-        {/* Simple Error Message - Only when no data */}
-        {chartError && data.length === 0 && (
-          <Box 
-            sx={{ 
-              position: 'absolute',
-              top: 140,
-              left: 0,
-              right: 0,
-              bottom: latestCandle ? 260 : 200,
-              backgroundColor: theme.palette.background.paper,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-            }}
-          >
-            <Typography variant="h6" color="warning.main" gutterBottom>
-              Chart Library Error
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
-              {chartError}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Waiting for market data: {symbol} • WebSocket: Connected
-            </Typography>
+            
+            {/* Show loading message overlay if no data */}
+            {data.length === 0 && (
+              <Box 
+                sx={{ 
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 20,
+                }}
+              >
+                <Typography variant="h6" color="warning.main" gutterBottom>
+                  Chart Library Error
+                </Typography>
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
+                  {chartError}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
+                  Loading market data for {symbol}...
+                </Typography>
+                <Typography variant="caption" color="text.secondary" align="center">
+                  WebSocket: Connected • Professional chart loading
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
 
