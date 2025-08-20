@@ -370,13 +370,13 @@ const TradingEnvironment: React.FC = () => {
                         </TableCell>
                         <TableCell align="right">
                           <Typography 
-                            color={agent.performance.total_return >= 0 ? 'success.main' : 'error.main'}
+                            color={(agent.performance?.total_return || 0) >= 0 ? 'success.main' : 'error.main'}
                           >
-                            {agent.performance.total_return.toFixed(1)}%
+                            {(agent.performance?.total_return || 0).toFixed(1)}%
                           </Typography>
                         </TableCell>
-                        <TableCell align="right">{agent.performance.sharpe_ratio}</TableCell>
-                        <TableCell align="right">{agent.performance.win_rate.toFixed(1)}%</TableCell>
+                        <TableCell align="right">{agent.performance?.sharpe_ratio || 0}</TableCell>
+                        <TableCell align="right">{(agent.performance?.win_rate || 0).toFixed(1)}%</TableCell>
                         <TableCell>
                           {agent.current_position ? (
                             <Box>
@@ -406,7 +406,7 @@ const TradingEnvironment: React.FC = () => {
                                 size="small"
                               />
                               <Typography variant="caption" display="block">
-                                {agent.last_signal.symbol} ({(agent.last_signal.confidence * 100).toFixed(0)}%)
+                                {agent.last_signal.symbol} ({((agent.last_signal.confidence || 0) * 100).toFixed(0)}%)
                               </Typography>
                             </Box>
                           )}
@@ -447,13 +447,13 @@ const TradingEnvironment: React.FC = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">Total Return</Typography>
                   <Typography variant="h4" color="success.main">
-                    {agents.reduce((sum, agent) => sum + agent.performance.total_return, 0).toFixed(1)}%
+                    {agents.reduce((sum, agent) => sum + (agent.performance?.total_return || 0), 0).toFixed(1)}%
                   </Typography>
                 </Box>
                 <Box>
                   <Typography variant="body2" color="text.secondary">Average Sharpe Ratio</Typography>
                   <Typography variant="h4">
-                    {(agents.reduce((sum, agent) => sum + agent.performance.sharpe_ratio, 0) / agents.length).toFixed(2)}
+                    {agents.length > 0 ? (agents.reduce((sum, agent) => sum + (agent.performance?.sharpe_ratio || 0), 0) / agents.length).toFixed(2) : '0.00'}
                   </Typography>
                 </Box>
                 <Box>

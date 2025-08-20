@@ -38,7 +38,10 @@
       "Bash(for file in *.py)",
       "Bash(do echo \"=== $file ===\")",
       "Bash(done)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "WebFetch(domain:www.marketindex.com.au)",
+      "Bash(ping:*)",
+      "Bash(del nul)"
     ],
     "deny": []
   }

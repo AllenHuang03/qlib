@@ -121,9 +121,9 @@ class DataSubjectRights:
     user_id: str
     request_type: str  # access, rectification, erasure, portability
     submitted_at: str
+    status: str  # pending, processing, completed, rejected
     processed_at: Optional[str] = None
     completed_at: Optional[str] = None
-    status: str  # pending, processing, completed, rejected
     response_data: Optional[Dict[str, Any]] = None
     rejection_reason: Optional[str] = None
 

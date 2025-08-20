@@ -145,7 +145,7 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
     (priceChange / previousCandle.close) * 100 : 0;
 
   return (
-    <Box sx={{ width: '100%', height: height || 600, minHeight: 500 }}>
+    <Box sx={{ width: '100%', height: '100%', minHeight: height || 600, display: 'flex', flexDirection: 'column' }}>
       {/* Chart Header */}
       <Box sx={{ 
         display: 'flex', 
@@ -153,7 +153,8 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
         justifyContent: 'space-between',
         p: 1,
         borderBottom: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-        minHeight: 60,
+        minHeight: 80,
+        flexShrink: 0,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -206,7 +207,7 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
       </Box>
 
       {/* Main Chart Area */}
-      <Box sx={{ height: '70%', minHeight: 300, p: 1 }}>
+      <Box sx={{ flex: '1 1 0', minHeight: 400, p: 1 }}>
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'area' ? (
             <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -344,7 +345,7 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
       </Box>
 
       {/* Volume Chart */}
-      <Box sx={{ height: '25%', minHeight: 120, p: 1 }}>
+      <Box sx={{ height: 150, flexShrink: 0, p: 1 }}>
         <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
           Volume
         </Typography>
@@ -383,9 +384,11 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        height: 40,
+        flexShrink: 0,
       }}>
         <Typography variant="caption" color="text.secondary">
-          Professional Trading Chart • {data.length} candles • Real-time data
+          Professional Trading Chart • {chartData.length} candles • Real-time data
         </Typography>
         <Typography variant="caption" color="text.secondary">
           Powered by Qlib Pro

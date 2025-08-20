@@ -19,10 +19,10 @@ import uvicorn
 try:
     from market_data_service import market_data_service
     REAL_DATA_AVAILABLE = True
-    print("✅ Real market data service loaded")
+    print("SUCCESS: Real market data service loaded")
 except ImportError:
     REAL_DATA_AVAILABLE = False
-    print("⚠️ Using mock data only - install market_data_service for real data")
+    print("WARNING: Using mock data only - install market_data_service for real data")
 
 # Railway configuration - Railway uses port 8080
 PORT = int(os.environ.get("PORT", 8080))

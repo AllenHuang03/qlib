@@ -243,7 +243,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
         fontFamily: "'Roboto Mono', 'Consolas', 'Monaco', monospace",
       },
       width: chartContainerRef.current.clientWidth,
-      height: height - 140, // Account for enhanced controls
+      height: Math.max(400, height - 180), // Account for enhanced controls with minimum height
       grid: {
         vertLines: {
           color: alpha(theme.palette.text.primary, 0.08),
@@ -588,7 +588,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
         position: isBuy ? 'belowBar' : 'aboveBar',
         color: isBuy ? theme.palette.success.main : theme.palette.error.main,
         shape: isBuy ? 'arrowUp' : 'arrowDown',
-        text: `${signal.signal} (${(signal.confidence * 100).toFixed(0)}%)`,
+        text: `${signal.signal} (${((signal.confidence || 0) * 100).toFixed(0)}%)`,
         size: signal.strength === 'VERY_STRONG' ? 2 : signal.strength === 'STRONG' ? 1.5 : 1,
       };
 
@@ -633,6 +633,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
   const handleTimeframeChange = (newTimeframe: string) => {
     const timeframe = timeframes.find(tf => tf.value === newTimeframe);
     if (timeframe && !timeframe.disabled) {
+      console.log('Timeframe changed to:', newTimeframe);
       setConfig(prev => ({ ...prev, timeframe: newTimeframe as any }));
       onTimeframeChange?.(newTimeframe);
     }
@@ -664,6 +665,13 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
       setIsFullscreen(false);
     }
   };
+
+  // Update config when configProp changes
+  useEffect(() => {
+    if (configProp) {
+      setConfig(prev => ({ ...prev, ...configProp }));
+    }
+  }, [configProp]);
 
   // Initialize chart on mount
   useEffect(() => {
@@ -965,9 +973,10 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
         <Box 
           ref={chartContainerRef} 
           sx={{ 
-            height: `calc(100% - ${latestCandle ? '260px' : '200px'})`,
+            height: `calc(100% - ${latestCandle ? '180px' : '140px'})`,
             position: 'relative',
             backgroundColor: theme.palette.background.paper,
+            minHeight: 400,
           }} 
         />
 
@@ -979,7 +988,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
               top: 140,
               left: 0,
               right: 0,
-              bottom: latestCandle ? 260 : 200,
+              bottom: latestCandle ? 180 : 140,
               backgroundColor: theme.palette.background.paper,
               zIndex: 10,
               overflow: 'hidden',
@@ -990,7 +999,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
               symbol={symbol}
               data={data}
               indicators={indicators}
-              height={height - (latestCandle ? 400 : 340)}
+              height={height}
             />
             
             {/* Show loading message overlay if no data */}
@@ -1032,7 +1041,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
           <Paper 
             sx={{ 
               position: 'absolute', 
-              top: latestCandle ? 280 : 220, 
+              top: latestCandle ? 200 : 160, 
               right: 16, 
               p: 1.5, 
               backgroundColor: alpha(theme.palette.background.paper, 0.95),

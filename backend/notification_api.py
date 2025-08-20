@@ -38,13 +38,13 @@ class NotificationPreferencesRequest(BaseModel):
     trading_signals_email: Optional[bool] = True
     trading_signals_sms: Optional[bool] = False
     portfolio_reports_email: Optional[bool] = True
-    portfolio_reports_frequency: Optional[str] = Field(default="weekly", regex="^(daily|weekly|monthly)$")
+    portfolio_reports_frequency: Optional[str] = Field(default="weekly", pattern="^(daily|weekly|monthly)$")
     security_alerts_email: Optional[bool] = True
     security_alerts_sms: Optional[bool] = True
     marketing_emails: Optional[bool] = False
     system_notifications: Optional[bool] = True
-    quiet_hours_start: Optional[str] = Field(default="22:00", regex="^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
-    quiet_hours_end: Optional[str] = Field(default="07:00", regex="^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
+    quiet_hours_start: Optional[str] = Field(default="22:00", pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
+    quiet_hours_end: Optional[str] = Field(default="07:00", pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
     timezone: Optional[str] = Field(default="Australia/Sydney")
 
 class NotificationPreferencesResponse(BaseModel):
@@ -97,7 +97,7 @@ class KYCStatusRequest(BaseModel):
     user_id: str
     user_name: str
     user_email: EmailStr
-    status: str = Field(..., regex="^(submitted|approved|rejected|manual_review)$")
+    status: str = Field(..., pattern="^(submitted|approved|rejected|manual_review)$")
     verification_date: Optional[str] = None
 
 class DepositConfirmationRequest(BaseModel):
@@ -105,7 +105,7 @@ class DepositConfirmationRequest(BaseModel):
     user_name: str
     user_email: EmailStr
     amount: float = Field(..., gt=0)
-    currency: str = Field(default="AUD", regex="^(AUD|USD)$")
+    currency: str = Field(default="AUD", pattern="^(AUD|USD)$")
     transaction_id: str
     new_balance: float = Field(..., ge=0)
 
@@ -115,7 +115,7 @@ class TradingSignalRequest(BaseModel):
     user_email: EmailStr
     user_phone: Optional[str] = None
     symbol: str
-    signal: str = Field(..., regex="^(BUY|SELL|HOLD)$")
+    signal: str = Field(..., pattern="^(BUY|SELL|HOLD)$")
     confidence: float = Field(..., ge=0, le=100)
     current_price: float = Field(..., gt=0)
     target_price: float = Field(..., gt=0)
@@ -134,7 +134,7 @@ class PortfolioReportRequest(BaseModel):
     user_id: str
     user_name: str
     user_email: EmailStr
-    period: str = Field(..., regex="^(daily|weekly|monthly)$")
+    period: str = Field(..., pattern="^(daily|weekly|monthly)$")
     total_return: float
     total_return_percent: float
     best_performer: str

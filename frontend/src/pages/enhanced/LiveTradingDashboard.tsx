@@ -709,28 +709,30 @@ const LiveTradingDashboard: React.FC = () => {
           <Box sx={{ flexGrow: 1, p: isMobile ? 1 : 2, pt: 0, overflow: 'hidden' }}>
             <Grid container spacing={2} sx={{ height: '100%' }}>
               {/* Main Chart */}
-              <Grid item xs={12} lg={8} sx={{ height: '100%' }}>
-                <ProfessionalCandlestickChart
-                  symbol={selectedSymbol}
-                  data={marketData}
-                  indicators={indicators}
-                  signals={signals}
-                  config={{
-                    symbol: selectedSymbol,
-                    timeframe: selectedTimeframe as any,
-                    indicators: ['SMA_20', 'SMA_50', 'RSI_14'],
-                    showVolume: true,
-                    showSignals: true,
-                    showLevels: true,
-                    theme: theme.palette.mode,
-                    autoUpdate: true,
-                  }}
-                  onTimeframeChange={handleTimeframeChange}
-                  height={isMobile ? 400 : 600}
-                  realTimeEnabled={isRealTimeActive}
-                  assetClass={assetClass}
-                  performance={performanceMetrics}
-                />
+              <Grid item xs={12} lg={8} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ height: '100%', minHeight: isMobile ? 500 : 700 }}>
+                  <ProfessionalCandlestickChart
+                    symbol={selectedSymbol}
+                    data={marketData}
+                    indicators={indicators}
+                    signals={signals}
+                    config={{
+                      symbol: selectedSymbol,
+                      timeframe: selectedTimeframe as any,
+                      indicators: ['SMA_20', 'SMA_50', 'RSI_14'],
+                      showVolume: true,
+                      showSignals: true,
+                      showLevels: true,
+                      theme: theme.palette.mode,
+                      autoUpdate: true,
+                    }}
+                    onTimeframeChange={handleTimeframeChange}
+                    height={isMobile ? 500 : 700}
+                    realTimeEnabled={isRealTimeActive}
+                    assetClass={assetClass}
+                    performance={performanceMetrics}
+                  />
+                </Box>
               </Grid>
 
               {/* Side Panel - Hidden on mobile in favor of drawer */}
@@ -761,7 +763,7 @@ const LiveTradingDashboard: React.FC = () => {
                                   color={signal.signal === 'BUY' ? 'success' : signal.signal === 'SELL' ? 'error' : 'warning'}
                                 />
                                 <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                                  {(signal.confidence * 100).toFixed(0)}%
+                                  {((signal.confidence || 0) * 100).toFixed(0)}%
                                 </Typography>
                               </Box>
                               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
