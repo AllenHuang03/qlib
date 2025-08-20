@@ -13,8 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy entire backend directory
 COPY backend/ ./
 
-# Expose port (Railway will set PORT env var)
-EXPOSE $PORT
+# Expose port 8080 for Railway
+EXPOSE 8080
 
 # Run the minimal production API (for Railway deployment testing)
 CMD ["python", "minimal_production_api.py"]

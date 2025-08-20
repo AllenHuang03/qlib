@@ -13,8 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-# Railway configuration
-PORT = int(os.environ.get("PORT", 8001))
+# Railway configuration - Railway uses port 8080
+PORT = int(os.environ.get("PORT", 8080))
 
 app = FastAPI(
     title="Qlib Pro - Minimal Production API", 
