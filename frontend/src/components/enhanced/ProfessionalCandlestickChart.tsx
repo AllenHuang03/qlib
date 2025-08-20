@@ -118,6 +118,9 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
     ...configProp,
   });
 
+  // Error state for fallback chart
+  const [chartError, setChartError] = useState<string | null>(null);
+
   const [chartType, setChartType] = useState<'candlestick' | 'line' | 'area'>('candlestick');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [crosshairData, setCrosshairData] = useState<any>(null);
@@ -221,6 +224,13 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
     // Create new chart with professional settings
     let chart;
     try {
+      // Check if createChart function is available
+      if (typeof createChart !== 'function') {
+        console.error('createChart function not available - falling back to simple chart');
+        setChartError('Chart library not loaded - using fallback');
+        return;
+      }
+      
       chart = createChart(chartContainerRef.current, {
       layout: {
         background: { 
@@ -301,20 +311,25 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
     });
     } catch (error) {
       console.error('Failed to create chart:', error);
+      setChartError('Chart initialization failed - using fallback');
       return;
     }
 
     chartRef.current = chart;
+    setChartError(null); // Clear any previous errors
 
     // Add candlestick series with error handling
     if (!chart || typeof chart.addCandlestickSeries !== 'function') {
       console.error('Chart object is invalid or addCandlestickSeries method not available');
+      setChartError('Chart method addCandlestickSeries not available');
       return;
     }
     
-    const candlestickSeries = chart.addCandlestickSeries({
-      upColor: theme.palette.success.main,
-      downColor: theme.palette.error.main,
+    let candlestickSeries;
+    try {
+      candlestickSeries = chart.addCandlestickSeries({
+        upColor: theme.palette.success.main,
+        downColor: theme.palette.error.main,
       borderUpColor: theme.palette.success.main,
       borderDownColor: theme.palette.error.main,
       wickUpColor: theme.palette.success.main,
@@ -323,6 +338,11 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
       lastValueVisible: true,
       title: symbol,
     });
+    } catch (error) {
+      console.error('Failed to add candlestick series:', error);
+      setChartError('Failed to create candlestick chart');
+      return;
+    }
     
     candlestickSeriesRef.current = candlestickSeries;
 
@@ -949,6 +969,42 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
             backgroundColor: theme.palette.background.paper,
           }} 
         />
+
+        {/* Fallback Chart - Only show if lightweight-charts fails */}
+        {chartError && (
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              top: 140,
+              left: 0,
+              right: 0,
+              bottom: latestCandle ? 260 : 200,
+              backgroundColor: theme.palette.background.paper,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10,
+            }}
+          >
+            <Typography variant="h6" color="warning.main" gutterBottom>
+              Chart Library Error
+            </Typography>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
+              {chartError}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" align="center">
+              Market data: {symbol} • {data.length} candles • WebSocket: Connected
+            </Typography>
+            {data.length > 0 && (
+              <Box sx={{ mt: 2, textAlign: 'center' }}>
+                <Typography variant="body2">
+                  Latest: ${data[data.length - 1]?.close?.toFixed(2) || 'N/A'}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
 
         {/* Enhanced Crosshair Info */}
         {crosshairData && (
