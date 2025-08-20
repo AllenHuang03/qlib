@@ -8,7 +8,9 @@ import os
 import time
 import random
 import datetime
-from fastapi import FastAPI, HTTPException
+import json
+import asyncio
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -194,14 +196,93 @@ async def get_supported_symbols():
         "timestamp": datetime.datetime.now().isoformat()
     }
 
-# WebSocket endpoint placeholder
+@app.get("/api/market/signals/{symbol}")
+async def get_trading_signals(symbol: str):
+    """Get mock trading signals"""
+    return {
+        "symbol": symbol,
+        "signals": [
+            {
+                "type": "BUY",
+                "strength": round(random.uniform(0.6, 0.9), 2),
+                "price": round(random.uniform(90, 110), 2),
+                "timestamp": datetime.datetime.now().isoformat(),
+                "reason": "Technical breakout pattern detected"
+            },
+            {
+                "type": "HOLD",
+                "strength": round(random.uniform(0.5, 0.8), 2),
+                "price": round(random.uniform(90, 110), 2),
+                "timestamp": datetime.datetime.now().isoformat(),
+                "reason": "Consolidation phase, await next trend"
+            }
+        ],
+        "count": 2,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except:
+                # Remove dead connections
+                self.active_connections.remove(connection)
+
+manager = ConnectionManager()
+
+# WebSocket endpoint for live market data
+@app.websocket("/ws/live-market")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        # Send initial connection message
+        await manager.send_personal_message(json.dumps({
+            "type": "connection",
+            "message": "Connected to live market data",
+            "timestamp": datetime.datetime.now().isoformat()
+        }), websocket)
+        
+        # Keep connection alive and send periodic updates
+        while True:
+            # Send mock market data every 5 seconds
+            mock_data = {
+                "type": "market_update",
+                "symbol": "CBA.AX",
+                "price": round(random.uniform(90, 110), 2),
+                "change": round(random.uniform(-2, 2), 2),
+                "volume": random.randint(1000, 10000),
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+            await manager.send_personal_message(json.dumps(mock_data), websocket)
+            await asyncio.sleep(5)
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+# WebSocket info endpoint
 @app.get("/ws/live-market")
 async def websocket_info():
     """WebSocket endpoint information"""
     return {
         "message": "WebSocket endpoint for live market data",
         "status": "available",
-        "url": "wss://qlib-production-b7f5.up.railway.app/ws/live-market",
+        "url": "wss://qlib-production.up.railway.app/ws/live-market",
         "protocols": ["live-quotes", "trading-signals", "market-alerts"]
     }
 

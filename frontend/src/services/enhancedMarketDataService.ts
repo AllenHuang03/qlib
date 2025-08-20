@@ -560,7 +560,8 @@ class EnhancedMarketDataService {
    */
   async getSupportedSymbols(): Promise<Record<string, string[]>> {
     try {
-      const response = await fetch('/api/market/multi-asset/symbols');
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const response = await fetch(`${API_BASE_URL}/api/market/multi-asset/symbols`);
       const data = await response.json();
       return data.symbols || {};
     } catch (error) {

@@ -459,13 +459,13 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
 
     // Group indicators by type
     const trendIndicators = indicators.filter(ind => 
-      ['SMA', 'EMA'].some(type => ind.type.startsWith(type))
+      ind?.type && ['SMA', 'EMA'].some(type => ind.type.startsWith(type))
     );
     const momentumIndicators = indicators.filter(ind => 
-      ['RSI', 'MACD', 'STOCHASTIC'].some(type => ind.type.startsWith(type))
+      ind?.type && ['RSI', 'MACD', 'STOCHASTIC'].some(type => ind.type.startsWith(type))
     );
     const volumeIndicators = indicators.filter(ind => 
-      ['OBV', 'VWAP'].some(type => ind.type.startsWith(type))
+      ind?.type && ['OBV', 'VWAP'].some(type => ind.type.startsWith(type))
     );
 
     // Add trend indicators on main chart
