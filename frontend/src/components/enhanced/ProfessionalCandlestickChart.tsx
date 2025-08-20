@@ -53,6 +53,7 @@ import {
 } from '@mui/icons-material';
 import { createChart, IChartApi, ISeriesApi, ColorType, LineStyle, CandlestickSeriesApi, HistogramSeriesApi } from 'lightweight-charts';
 import { CandlestickData, TechnicalIndicator, TradingSignal, ChartConfig, MarketDataResponse } from '../../types/market';
+import FallbackTradingChart from './FallbackTradingChart';
 
 interface ProfessionalCandlestickChartProps {
   symbol: string;
@@ -970,8 +971,31 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
           }} 
         />
 
-        {/* Fallback Chart - Only show if lightweight-charts fails */}
-        {chartError && (
+        {/* Professional Fallback Chart - Based on MarketIndex.com.au design */}
+        {chartError && data.length > 0 && (
+          <Box 
+            sx={{ 
+              position: 'absolute',
+              top: 140,
+              left: 0,
+              right: 0,
+              bottom: latestCandle ? 260 : 200,
+              backgroundColor: theme.palette.background.paper,
+              zIndex: 10,
+              overflow: 'hidden',
+            }}
+          >
+            <FallbackTradingChart
+              symbol={symbol}
+              data={data}
+              indicators={indicators}
+              height={height - (latestCandle ? 400 : 340)}
+            />
+          </Box>
+        )}
+
+        {/* Simple Error Message - Only when no data */}
+        {chartError && data.length === 0 && (
           <Box 
             sx={{ 
               position: 'absolute',
@@ -994,15 +1018,8 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
               {chartError}
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center">
-              Market data: {symbol} • {data.length} candles • WebSocket: Connected
+              Waiting for market data: {symbol} • WebSocket: Connected
             </Typography>
-            {data.length > 0 && (
-              <Box sx={{ mt: 2, textAlign: 'center' }}>
-                <Typography variant="body2">
-                  Latest: ${data[data.length - 1]?.close?.toFixed(2) || 'N/A'}
-                </Typography>
-              </Box>
-            )}
           </Box>
         )}
 
