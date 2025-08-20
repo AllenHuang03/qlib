@@ -35,34 +35,51 @@ interface FallbackTradingChartProps {
 
 // Custom Candlestick component for Recharts
 const CustomCandlestick = (props: any) => {
-  const { payload, x, y, width, height } = props;
-  if (!payload) return null;
+  const { payload, x, y, width } = props;
+  
+  // Validate all required values
+  if (!payload || !payload.open || !payload.close || !payload.high || !payload.low) {
+    return null;
+  }
 
-  const { open, close, high, low } = payload;
+  // Ensure numeric values and no NaN
+  const open = Number(payload.open);
+  const close = Number(payload.close);
+  const high = Number(payload.high);
+  const low = Number(payload.low);
+  const xPos = Number(x);
+  const candleWidth = Number(width);
+
+  if (isNaN(open) || isNaN(close) || isNaN(high) || isNaN(low) || isNaN(xPos) || isNaN(candleWidth)) {
+    return null;
+  }
+
   const isPositive = close > open;
   const color = isPositive ? '#4caf50' : '#f44336';
   
+  // Calculate positions with validation
   const bodyHeight = Math.abs(close - open);
   const bodyY = Math.min(open, close);
+  const wickX = xPos + candleWidth / 2;
   
   return (
     <g>
       {/* Wick */}
       <line
-        x1={x + width / 2}
+        x1={wickX}
         y1={high}
-        x2={x + width / 2}
+        x2={wickX}
         y2={low}
         stroke={color}
         strokeWidth={1}
       />
       {/* Body */}
       <rect
-        x={x + 1}
+        x={xPos + 1}
         y={bodyY}
-        width={width - 2}
-        height={bodyHeight || 1}
-        fill={isPositive ? color : color}
+        width={Math.max(candleWidth - 2, 1)}
+        height={Math.max(bodyHeight, 1)}
+        fill={color}
         stroke={color}
         strokeWidth={1}
       />

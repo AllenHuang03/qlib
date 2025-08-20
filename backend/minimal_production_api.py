@@ -91,17 +91,33 @@ async def api_health():
 # Market data endpoints with mock data
 @app.get("/api/market/quotes")
 async def get_quotes():
-    """Get mock market quotes"""
+    """Get mock market quotes with realistic Australian stock prices"""
     quotes = []
-    symbols = ["CBA.AX", "BHP.AX", "CSL.AX", "WBC.AX", "ANZ.AX"]
     
-    for symbol in symbols:
+    # Realistic price ranges for major ASX stocks (as of 2025)
+    stock_data = {
+        "CBA.AX": {"base": 171.21, "range": 5.0},    # Commonwealth Bank
+        "BHP.AX": {"base": 38.45, "range": 2.0},     # BHP Group  
+        "CSL.AX": {"base": 285.30, "range": 8.0},    # CSL Limited
+        "WBC.AX": {"base": 28.95, "range": 1.5},     # Westpac
+        "ANZ.AX": {"base": 30.20, "range": 1.2},     # ANZ Bank
+    }
+    
+    for symbol, data in stock_data.items():
+        base_price = data["base"]
+        price_range = data["range"]
+        
+        # Generate realistic price movement
+        price_change = random.uniform(-price_range, price_range)
+        current_price = base_price + price_change
+        change_percent = (price_change / base_price) * 100
+        
         quotes.append(MarketQuote(
             symbol=symbol,
-            price=round(random.uniform(50, 300), 2),
-            change=round(random.uniform(-5, 5), 2),
-            change_percent=round(random.uniform(-3, 3), 2),
-            volume=random.randint(100000, 5000000),
+            price=round(current_price, 2),
+            change=round(price_change, 2),
+            change_percent=round(change_percent, 2),
+            volume=random.randint(500000, 8000000),  # Realistic volume for major stocks
             last_updated=datetime.datetime.now().isoformat()
         ))
     
@@ -115,19 +131,46 @@ async def get_quotes():
 
 @app.get("/api/market/historical/{symbol}")
 async def get_historical_data(symbol: str):
-    """Get mock historical data"""
+    """Get mock historical data with realistic prices"""
     data = []
+    
+    # Get base price for the symbol
+    stock_data = {
+        "CBA.AX": 171.21,
+        "BHP.AX": 38.45,
+        "CSL.AX": 285.30,
+        "WBC.AX": 28.95,
+        "ANZ.AX": 30.20,
+    }
+    
+    base_price = stock_data.get(symbol, 100.0)
+    current_price = base_price
+    
     for i in range(30):
         date = datetime.datetime.now() - datetime.timedelta(days=30-i)
-        base_price = 100 + random.uniform(-10, 10)
+        
+        # Generate realistic daily price movement (±2% typical range)
+        daily_change_percent = random.uniform(-0.02, 0.02)
+        daily_change = current_price * daily_change_percent
+        
+        # Calculate OHLC for the day
+        open_price = current_price
+        close_price = current_price + daily_change
+        high_price = max(open_price, close_price) + random.uniform(0, abs(daily_change) * 0.5)
+        low_price = min(open_price, close_price) - random.uniform(0, abs(daily_change) * 0.5)
+        
         data.append({
             "date": date.strftime("%Y-%m-%d"),
-            "open": round(base_price + random.uniform(-2, 2), 2),
-            "high": round(base_price + random.uniform(0, 5), 2),
-            "low": round(base_price - random.uniform(0, 5), 2),
-            "close": round(base_price + random.uniform(-3, 3), 2),
-            "volume": random.randint(100000, 1000000)
+            "time": date.isoformat(),
+            "open": round(open_price, 2),
+            "high": round(high_price, 2),
+            "low": round(low_price, 2),
+            "close": round(close_price, 2),
+            "volume": random.randint(500000, 3000000)
         })
+        
+        # Update current price for next day
+        current_price = close_price
     
     return {
         "symbol": symbol,
@@ -138,20 +181,47 @@ async def get_historical_data(symbol: str):
 
 @app.get("/api/market/live/historical/{symbol}")
 async def get_live_historical_data(symbol: str, days: int = 30):
-    """Get enhanced historical data with mock fallback"""
+    """Get enhanced historical data with realistic prices"""
     data = []
+    
+    # Get base price for the symbol
+    stock_data = {
+        "CBA.AX": 171.21,
+        "BHP.AX": 38.45,
+        "CSL.AX": 285.30,
+        "WBC.AX": 28.95,
+        "ANZ.AX": 30.20,
+    }
+    
+    base_price = stock_data.get(symbol, 100.0)
+    current_price = base_price
+    
     for i in range(days):
         date = datetime.datetime.now() - datetime.timedelta(days=days-i)
-        base_price = 100 + random.uniform(-10, 10)
+        
+        # Generate realistic daily price movement
+        daily_change_percent = random.uniform(-0.015, 0.015)  # ±1.5%
+        daily_change = current_price * daily_change_percent
+        
+        # Calculate OHLC for the day
+        open_price = current_price
+        close_price = current_price + daily_change
+        high_price = max(open_price, close_price) + random.uniform(0, abs(daily_change) * 0.3)
+        low_price = min(open_price, close_price) - random.uniform(0, abs(daily_change) * 0.3)
+        
         data.append({
             "date": date.strftime("%Y-%m-%d"),
             "timestamp": date.timestamp(),
-            "open": round(base_price + random.uniform(-2, 2), 2),
-            "high": round(base_price + random.uniform(0, 5), 2),
-            "low": round(base_price - random.uniform(0, 5), 2),
-            "close": round(base_price + random.uniform(-3, 3), 2),
-            "volume": random.randint(100000, 1000000)
+            "time": date.isoformat(),
+            "open": round(open_price, 2),
+            "high": round(high_price, 2),
+            "low": round(low_price, 2),
+            "close": round(close_price, 2),
+            "volume": random.randint(800000, 4000000)
         })
+        
+        # Update current price for next day
+        current_price = close_price
     
     return {
         "symbol": symbol,
@@ -223,19 +293,37 @@ async def get_trading_signals(symbol: str):
 
 @app.get("/api/market/live/quotes")
 async def get_live_quotes(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,ANZ.AX"):
-    """Get live quotes for multiple symbols"""
+    """Get live quotes for multiple symbols with realistic prices"""
     symbol_list = symbols.split(',')
     quotes = []
     
+    # Realistic price data for major ASX stocks
+    stock_data = {
+        "CBA.AX": {"base": 171.21, "range": 2.0},
+        "BHP.AX": {"base": 38.45, "range": 1.0},
+        "CSL.AX": {"base": 285.30, "range": 4.0},
+        "WBC.AX": {"base": 28.95, "range": 0.8},
+        "ANZ.AX": {"base": 30.20, "range": 0.9},
+    }
+    
     for symbol in symbol_list:
+        data = stock_data.get(symbol, {"base": 100.0, "range": 2.0})
+        base_price = data["base"]
+        price_range = data["range"]
+        
+        # Generate realistic price and spread
+        price_change = random.uniform(-price_range, price_range)
+        current_price = base_price + price_change
+        spread = current_price * 0.001  # 0.1% spread
+        
         quotes.append({
             "symbol": symbol,
-            "price": round(random.uniform(50, 300), 2),
-            "change": round(random.uniform(-5, 5), 2),
-            "change_percent": round(random.uniform(-3, 3), 2),
-            "volume": random.randint(100000, 5000000),
-            "bid": round(random.uniform(50, 300), 2),
-            "ask": round(random.uniform(50, 300), 2),
+            "price": round(current_price, 2),
+            "change": round(price_change, 2),
+            "change_percent": round((price_change / base_price) * 100, 2),
+            "volume": random.randint(1000000, 6000000),
+            "bid": round(current_price - spread/2, 2),
+            "ask": round(current_price + spread/2, 2),
             "last_updated": datetime.datetime.now().isoformat()
         })
     
@@ -313,18 +401,30 @@ async def websocket_endpoint(websocket: WebSocket):
         }), websocket)
         
         # Keep connection alive and send periodic updates
+        base_price = 171.21  # CBA.AX current price
+        current_price = base_price
+        
         while True:
-            # Send mock market data every 5 seconds
+            # Send realistic market data every 5 seconds
+            # Small price movement (±0.5%)
+            price_change = random.uniform(-0.5, 0.5)
+            price_change_amount = current_price * (price_change / 100)
+            new_price = current_price + price_change_amount
+            
             mock_data = {
                 "type": "market_update",
                 "symbol": "CBA.AX",
-                "price": round(random.uniform(90, 110), 2),
-                "change": round(random.uniform(-2, 2), 2),
-                "volume": random.randint(1000, 10000),
+                "price": round(new_price, 2),
+                "change": round(price_change_amount, 2),
+                "change_percent": round(price_change, 2),
+                "volume": random.randint(5000, 50000),  # Realistic tick volume
                 "timestamp": datetime.datetime.now().isoformat()
             }
             await manager.send_personal_message(json.dumps(mock_data), websocket)
-            await asyncio.sleep(5)
+            
+            # Update current price with some persistence (not too volatile)
+            current_price = new_price * 0.7 + base_price * 0.3  # Mean reversion
+            await asyncio.sleep(3)  # More frequent updates (every 3 seconds)
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
