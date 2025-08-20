@@ -31,6 +31,8 @@ interface FallbackTradingChartProps {
   data: CandlestickData[];
   indicators?: TechnicalIndicator[];
   height?: number;
+  onTimeframeChange?: (timeframe: string) => void;
+  selectedTimeframe?: string;
 }
 
 // Simplified Bar component for better visibility
@@ -72,10 +74,23 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
   data,
   indicators = [],
   height = 600,
+  onTimeframeChange,
+  selectedTimeframe = '1d',
 }) => {
   const theme = useTheme();
-  const [timeframe, setTimeframe] = useState('1d');
+  const [timeframe, setTimeframe] = useState(selectedTimeframe);
   const [chartType, setChartType] = useState<'candlestick' | 'line' | 'area'>('candlestick');
+
+  // Handle timeframe change
+  const handleTimeframeChange = (newTimeframe: string) => {
+    setTimeframe(newTimeframe);
+    onTimeframeChange?.(newTimeframe);
+  };
+
+  // Handle chart type change
+  const handleChartTypeChange = (newType: 'candlestick' | 'line' | 'area') => {
+    setChartType(newType);
+  };
 
   // Process data for chart with fallback mock data
   const chartData = useMemo(() => {
@@ -145,7 +160,14 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
     (priceChange / previousCandle.close) * 100 : 0;
 
   return (
-    <Box sx={{ width: '100%', height: '100%', minHeight: height || 600, display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      width: '100%', 
+      height: '100%', 
+      minHeight: height || 600, 
+      display: 'flex', 
+      flexDirection: 'column',
+      overflow: 'hidden' // Prevent horizontal overflow
+    }}>
       {/* Chart Header */}
       <Box sx={{ 
         display: 'flex', 
@@ -155,6 +177,8 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
         borderBottom: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
         minHeight: 80,
         flexShrink: 0,
+        flexWrap: 'wrap', // Allow wrapping on smaller screens
+        gap: 1,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -182,7 +206,7 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
               <Button
                 key={tf.value}
                 variant={timeframe === tf.value ? 'contained' : 'outlined'}
-                onClick={() => setTimeframe(tf.value)}
+                onClick={() => handleTimeframeChange(tf.value)}
                 size="small"
               >
                 {tf.label}
@@ -196,7 +220,7 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
               <Button
                 key={ct.value}
                 variant={chartType === ct.value ? 'contained' : 'outlined'}
-                onClick={() => setChartType(ct.value as any)}
+                onClick={() => handleChartTypeChange(ct.value as any)}
                 size="small"
               >
                 {ct.label}

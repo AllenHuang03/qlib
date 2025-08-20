@@ -735,6 +735,38 @@ class EnhancedMarketDataService {
     await this.connectToLiveData();
     this.resubscribeAll();
   }
+
+  /**
+   * Check if we're using real or mock data
+   */
+  async getDataSourceStatus(): Promise<{ 
+    isRealData: boolean; 
+    source: string; 
+    status: string;
+    connectionType: string;
+  }> {
+    try {
+      // Check backend data source status
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/market/quotes`);
+      const data = await response.json();
+      
+      const isRealData = data.data_source?.includes('Real Data') || false;
+      
+      return {
+        isRealData,
+        source: data.data_source || 'Unknown',
+        status: isRealData ? 'live' : 'simulated',
+        connectionType: this.isConnected() ? 'websocket' : 'http'
+      };
+    } catch (error) {
+      return {
+        isRealData: false,
+        source: 'Mock Data (Connection Failed)',
+        status: 'simulated',
+        connectionType: 'none'
+      };
+    }
+  }
 }
 
 // Create singleton instance

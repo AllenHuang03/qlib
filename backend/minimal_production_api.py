@@ -464,6 +464,33 @@ async def get_trading_agents():
         "timestamp": datetime.datetime.now().isoformat()
     }
 
+@app.post("/api/trading/agents/{agent_id}/control")
+async def control_trading_agent(agent_id: str, action: dict):
+    """Control trading agent - start, pause, stop"""
+    valid_actions = ["start", "pause", "stop"]
+    action_type = action.get("action", "").lower()
+    
+    if action_type not in valid_actions:
+        raise HTTPException(status_code=400, detail=f"Invalid action. Must be one of: {valid_actions}")
+    
+    # Simulate agent control
+    status_map = {
+        "start": "ACTIVE",
+        "pause": "PAUSED", 
+        "stop": "STOPPED"
+    }
+    
+    new_status = status_map[action_type]
+    
+    return {
+        "success": True,
+        "agent_id": agent_id,
+        "action": action_type,
+        "new_status": new_status,
+        "timestamp": datetime.datetime.now().isoformat(),
+        "message": f"Agent {agent_id} {action_type} command executed successfully"
+    }
+
 # WebSocket connection manager
 class ConnectionManager:
     def __init__(self):

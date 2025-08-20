@@ -222,6 +222,11 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
       chartRef.current.remove();
     }
 
+    // Always use fallback chart for reliability
+    console.log('Using fallback chart for better compatibility');
+    setChartError('Using fallback chart for compatibility');
+    return;
+
     // Create new chart with professional settings
     let chart;
     try {
@@ -1000,6 +1005,8 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
               data={data}
               indicators={indicators}
               height={height}
+              onTimeframeChange={onTimeframeChange}
+              selectedTimeframe={config.timeframe}
             />
             
             {/* Show loading message overlay if no data */}

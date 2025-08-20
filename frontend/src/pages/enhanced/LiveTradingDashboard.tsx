@@ -135,6 +135,18 @@ const LiveTradingDashboard: React.FC = () => {
     connectionStatus: 'disconnected',
   });
 
+  const [dataSourceStatus, setDataSourceStatus] = useState<{
+    isRealData: boolean;
+    source: string;
+    status: string;
+    connectionType: string;
+  }>({
+    isRealData: false,
+    source: 'Loading...',
+    status: 'unknown',
+    connectionType: 'none'
+  });
+
   // Market summary state
   const [marketSummary, setMarketSummary] = useState<MarketSummary>({
     totalValue: 0,
@@ -279,6 +291,23 @@ const LiveTradingDashboard: React.FC = () => {
       const metrics = enhancedMarketDataService.getPerformanceMetrics();
       setPerformanceMetrics(metrics);
     }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Data source status monitoring
+  useEffect(() => {
+    const checkDataSource = async () => {
+      try {
+        const status = await enhancedMarketDataService.getDataSourceStatus();
+        setDataSourceStatus(status);
+      } catch (error) {
+        console.error('Failed to check data source status:', error);
+      }
+    };
+
+    checkDataSource();
+    const interval = setInterval(checkDataSource, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -459,14 +488,17 @@ const LiveTradingDashboard: React.FC = () => {
       <Grid item xs={6} sm={3}>
         <Card sx={{ 
           height: '100%', 
-          background: marketSummary.marketStatus === 'open' 
+          background: dataSourceStatus.isRealData 
             ? 'linear-gradient(45deg, #4caf50 30%, #81c784 90%)'
-            : 'linear-gradient(45deg, #9e9e9e 30%, #bdbdbd 90%)'
+            : 'linear-gradient(45deg, #ff9800 30%, #ffb74d 90%)'
         }}>
           <CardContent sx={{ color: 'white', textAlign: 'center', py: 1 }}>
-            <Typography variant="caption">Market Status</Typography>
-            <Typography variant="h6" sx={{ fontFamily: 'monospace' }}>
-              {marketSummary.marketStatus.toUpperCase()}
+            <Typography variant="caption">Data Source</Typography>
+            <Typography variant="h6" sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+              {dataSourceStatus.isRealData ? 'LIVE' : 'SIMULATED'}
+            </Typography>
+            <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.9 }}>
+              {dataSourceStatus.status.toUpperCase()}
             </Typography>
           </CardContent>
         </Card>
