@@ -300,7 +300,12 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
 
     chartRef.current = chart;
 
-    // Add candlestick series
+    // Add candlestick series with error handling
+    if (!chart || typeof chart.addCandlestickSeries !== 'function') {
+      console.error('Chart object is invalid or addCandlestickSeries method not available');
+      return;
+    }
+    
     const candlestickSeries = chart.addCandlestickSeries({
       upColor: theme.palette.success.main,
       downColor: theme.palette.error.main,

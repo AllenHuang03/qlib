@@ -16,5 +16,5 @@ COPY backend/ ./
 # Expose port (Railway will set PORT env var)
 EXPOSE $PORT
 
-# Run the production API
-CMD ["python", "production_api.py"]
+# Run the minimal production API (for Railway deployment testing)
+CMD ["python", "minimal_production_api.py"]
