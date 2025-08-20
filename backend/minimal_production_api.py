@@ -19,7 +19,7 @@ PORT = int(os.environ.get("PORT", 8001))
 app = FastAPI(
     title="Qlib Pro - Minimal Production API", 
     description="Essential trading platform API for Railway deployment",
-    version="2.1.0"
+    version="2.1.1"
 )
 
 # CORS middleware - allow Netlify frontend
