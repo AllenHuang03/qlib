@@ -219,7 +219,9 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
     }
 
     // Create new chart with professional settings
-    const chart = createChart(chartContainerRef.current, {
+    let chart;
+    try {
+      chart = createChart(chartContainerRef.current, {
       layout: {
         background: { 
           type: ColorType.Solid, 
@@ -297,6 +299,10 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
         pinch: true,
       },
     });
+    } catch (error) {
+      console.error('Failed to create chart:', error);
+      return;
+    }
 
     chartRef.current = chart;
 

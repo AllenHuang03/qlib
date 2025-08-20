@@ -221,6 +221,60 @@ async def get_trading_signals(symbol: str):
         "timestamp": datetime.datetime.now().isoformat()
     }
 
+@app.get("/api/market/live/quotes")
+async def get_live_quotes(symbols: str = "CBA.AX,BHP.AX,CSL.AX,WBC.AX,ANZ.AX"):
+    """Get live quotes for multiple symbols"""
+    symbol_list = symbols.split(',')
+    quotes = []
+    
+    for symbol in symbol_list:
+        quotes.append({
+            "symbol": symbol,
+            "price": round(random.uniform(50, 300), 2),
+            "change": round(random.uniform(-5, 5), 2),
+            "change_percent": round(random.uniform(-3, 3), 2),
+            "volume": random.randint(100000, 5000000),
+            "bid": round(random.uniform(50, 300), 2),
+            "ask": round(random.uniform(50, 300), 2),
+            "last_updated": datetime.datetime.now().isoformat()
+        })
+    
+    return {
+        "quotes": quotes,
+        "total": len(quotes),
+        "timestamp": datetime.datetime.now().isoformat(),
+        "market": "ASX",
+        "data_source": "Mock Data"
+    }
+
+@app.get("/api/market/multi-asset/data/{symbol}")
+async def get_asset_class_info(symbol: str):
+    """Get asset class information for a symbol"""
+    # Mock asset class mapping
+    asset_classes = {
+        "CBA.AX": "equity",
+        "BHP.AX": "equity", 
+        "CSL.AX": "equity",
+        "WBC.AX": "equity",
+        "ANZ.AX": "equity",
+        "BTC.AX": "cryptocurrency",
+        "ETH.AX": "cryptocurrency",
+        "GOLD": "commodity",
+        "SILVER": "commodity"
+    }
+    
+    asset_class = asset_classes.get(symbol, "equity")
+    
+    return {
+        "symbol": symbol,
+        "asset_class": asset_class,
+        "market": "ASX" if symbol.endswith(".AX") else "OTHER",
+        "currency": "AUD",
+        "exchange": "Australian Securities Exchange",
+        "sector": "Financial Services" if asset_class == "equity" else asset_class.title(),
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
 # WebSocket connection manager
 class ConnectionManager:
     def __init__(self):

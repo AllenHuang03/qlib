@@ -765,7 +765,7 @@ const LiveTradingDashboard: React.FC = () => {
                                 </Typography>
                               </Box>
                               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                {signal.symbol} • ${signal.priceTarget.toFixed(2)}
+                                {signal.symbol} • ${signal.priceTarget?.toFixed(2) || '0.00'}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
                                 {signal.reasoning?.[0] || 'Technical analysis'}

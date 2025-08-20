@@ -182,6 +182,13 @@ class EnhancedMarketDataService {
         case 'connection_established':
           console.log('Market data connection established:', message);
           break;
+        case 'connection':
+          console.log('Connected to live market data');
+          break;
+        case 'market_update':
+          // Handle market update from our minimal API
+          console.log('Market update received:', message);
+          break;
         default:
           console.log('Unknown message type:', message.type);
       }
@@ -581,7 +588,8 @@ class EnhancedMarketDataService {
    */
   async getAssetClassInfo(symbol: string): Promise<AssetClassInfo> {
     try {
-      const response = await fetch(`/api/market/multi-asset/data/${symbol}`);
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const response = await fetch(`${API_BASE_URL}/api/market/multi-asset/data/${symbol}`);
       const data = await response.json();
       
       return {
