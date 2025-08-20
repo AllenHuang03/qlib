@@ -495,26 +495,131 @@ async def control_trading_agent(agent_id: str, action: dict):
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
+        self.subscriptions: dict[str, list[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
+        print(f"WebSocket client connected. Total connections: {len(self.active_connections)}")
 
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+            
+        # Remove from all subscriptions
+        for symbol, connections in self.subscriptions.items():
+            if websocket in connections:
+                connections.remove(websocket)
+        
+        print(f"WebSocket client disconnected. Total connections: {len(self.active_connections)}")
+    
+    def subscribe(self, websocket: WebSocket, symbol: str):
+        if symbol not in self.subscriptions:
+            self.subscriptions[symbol] = []
+        if websocket not in self.subscriptions[symbol]:
+            self.subscriptions[symbol].append(websocket)
+            print(f"Client subscribed to {symbol}")
+    
+    def unsubscribe(self, websocket: WebSocket, symbol: str):
+        if symbol in self.subscriptions and websocket in self.subscriptions[symbol]:
+            self.subscriptions[symbol].remove(websocket)
+            print(f"Client unsubscribed from {symbol}")
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
+        try:
+            await websocket.send_text(message)
+        except:
+            self.disconnect(websocket)
 
     async def broadcast(self, message: str):
+        broken_connections = []
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
             except:
-                # Remove dead connections
-                self.active_connections.remove(connection)
+                broken_connections.append(connection)
+        
+        # Clean up broken connections
+        for broken in broken_connections:
+            self.disconnect(broken)
+    
+    async def broadcast_to_symbol(self, symbol: str, message: str):
+        if symbol in self.subscriptions:
+            broken_connections = []
+            for connection in self.subscriptions[symbol]:
+                try:
+                    await connection.send_text(message)
+                except:
+                    broken_connections.append(connection)
+            
+            # Clean up broken connections
+            for broken in broken_connections:
+                self.disconnect(broken)
 
 manager = ConnectionManager()
+
+# Background task to generate mock live data
+async def generate_mock_live_data():
+    import asyncio
+    
+    symbols = ["CBA.AX", "BHP.AX", "CSL.AX", "WBC.AX", "ANZ.AX", "AAPL", "TSLA", "GOOGL"]
+    base_prices = {
+        "CBA.AX": 171.21,
+        "BHP.AX": 38.45,
+        "CSL.AX": 285.30,
+        "WBC.AX": 28.95,
+        "ANZ.AX": 30.20,
+        "AAPL": 150.00,
+        "TSLA": 200.00,
+        "GOOGL": 140.00
+    }
+    
+    while True:
+        try:
+            for symbol in symbols:
+                if symbol in manager.subscriptions and len(manager.subscriptions[symbol]) > 0:
+                    base_price = base_prices.get(symbol, 100)
+                    
+                    # Generate realistic price movement
+                    change_percent = (random.random() - 0.5) * 0.02  # ±1% max change
+                    new_price = base_price * (1 + change_percent)
+                    
+                    # Update base price for next iteration (mean reversion)
+                    base_prices[symbol] = new_price * 0.8 + base_price * 0.2
+                    
+                    # Create realistic OHLC data
+                    high = new_price * (1 + random.random() * 0.005)
+                    low = new_price * (1 - random.random() * 0.005)
+                    open_price = base_price
+                    
+                    live_data = {
+                        "type": "price_update",
+                        "symbol": symbol,
+                        "price": round(new_price, 2),
+                        "change": round(new_price - base_price, 2),
+                        "changePercent": round(change_percent * 100, 2),
+                        "volume": random.randint(100000, 1000000),
+                        "high": round(high, 2),
+                        "low": round(low, 2),
+                        "open": round(open_price, 2),
+                        "timestamp": int(time.time() * 1000)
+                    }
+                    
+                    await manager.broadcast_to_symbol(symbol, json.dumps(live_data))
+            
+            await asyncio.sleep(2)  # Update every 2 seconds
+            
+        except Exception as e:
+            print(f"Error in mock data generation: {e}")
+            await asyncio.sleep(5)
+
+# Start background task
+import asyncio
+import time
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(generate_mock_live_data())
 
 # WebSocket endpoint for live market data
 @app.websocket("/ws/live-market")
@@ -528,33 +633,39 @@ async def websocket_endpoint(websocket: WebSocket):
             "timestamp": datetime.datetime.now().isoformat()
         }), websocket)
         
-        # Keep connection alive and send periodic updates
-        base_price = 171.21  # CBA.AX current price
-        current_price = base_price
-        
+        # Listen for subscription messages
         while True:
-            # Send realistic market data every 5 seconds
-            # Small price movement (±0.5%)
-            price_change = random.uniform(-0.5, 0.5)
-            price_change_amount = current_price * (price_change / 100)
-            new_price = current_price + price_change_amount
+            data = await websocket.receive_text()
+            message = json.loads(data)
             
-            mock_data = {
-                "type": "market_update",
-                "symbol": "CBA.AX",
-                "price": round(new_price, 2),
-                "change": round(price_change_amount, 2),
-                "change_percent": round(price_change, 2),
-                "volume": random.randint(5000, 50000),  # Realistic tick volume
-                "timestamp": datetime.datetime.now().isoformat()
-            }
-            await manager.send_personal_message(json.dumps(mock_data), websocket)
-            
-            # Update current price with some persistence (not too volatile)
-            current_price = new_price * 0.7 + base_price * 0.3  # Mean reversion
-            await asyncio.sleep(3)  # More frequent updates (every 3 seconds)
-            
+            if message.get("type") == "subscribe":
+                symbol = message.get("symbol", "").upper()
+                manager.subscribe(websocket, symbol)
+                
+                # Send confirmation
+                await manager.send_personal_message(json.dumps({
+                    "type": "subscription_confirmed",
+                    "symbol": symbol,
+                    "message": f"Subscribed to {symbol}",
+                    "timestamp": datetime.datetime.now().isoformat()
+                }), websocket)
+                
+            elif message.get("type") == "unsubscribe":
+                symbol = message.get("symbol", "").upper()
+                manager.unsubscribe(websocket, symbol)
+                
+                # Send confirmation
+                await manager.send_personal_message(json.dumps({
+                    "type": "unsubscription_confirmed",
+                    "symbol": symbol,
+                    "message": f"Unsubscribed from {symbol}",
+                    "timestamp": datetime.datetime.now().isoformat()
+                }), websocket)
+                
     except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        print(f"WebSocket error: {e}")
         manager.disconnect(websocket)
 
 # WebSocket info endpoint

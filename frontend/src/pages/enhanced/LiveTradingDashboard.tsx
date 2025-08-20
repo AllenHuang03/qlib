@@ -72,6 +72,7 @@ import {
   Info,
 } from '@mui/icons-material';
 import ProfessionalCandlestickChart from '../../components/enhanced/ProfessionalCandlestickChart';
+import CompleteTradingChart from '../../components/enhanced/CompleteTradingChart';
 import enhancedMarketDataService from '../../services/enhancedMarketDataService';
 import { marketAPI } from '../../services/api';
 import { CandlestickData, TechnicalIndicator, TradingSignal } from '../../types/market';
@@ -740,104 +741,17 @@ const LiveTradingDashboard: React.FC = () => {
           {/* Chart and Analysis */}
           <Box sx={{ flexGrow: 1, p: isMobile ? 1 : 2, pt: 0, overflow: 'hidden' }}>
             <Grid container spacing={2} sx={{ height: '100%' }}>
-              {/* Main Chart */}
-              <Grid item xs={12} lg={8} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ height: '100%', minHeight: isMobile ? 500 : 700 }}>
-                  <ProfessionalCandlestickChart
-                    symbol={selectedSymbol}
-                    data={marketData}
-                    indicators={indicators}
-                    signals={signals}
-                    config={{
-                      symbol: selectedSymbol,
-                      timeframe: selectedTimeframe as any,
-                      indicators: ['SMA_20', 'SMA_50', 'RSI_14'],
-                      showVolume: true,
-                      showSignals: true,
-                      showLevels: true,
-                      theme: theme.palette.mode,
-                      autoUpdate: true,
-                    }}
-                    onTimeframeChange={handleTimeframeChange}
-                    height={isMobile ? 500 : 700}
-                    realTimeEnabled={isRealTimeActive}
-                    assetClass={assetClass}
-                    performance={performanceMetrics}
-                  />
-                </Box>
+              {/* Professional Trading Chart - Full Width */}
+              <Grid item xs={12} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CompleteTradingChart
+                  symbol={selectedSymbol}
+                  initialData={marketData}
+                  height={isMobile ? 700 : 900}
+                  onTimeframeChange={handleTimeframeChange}
+                  realTimeEnabled={isRealTimeActive}
+                />
               </Grid>
 
-              {/* Side Panel - Hidden on mobile in favor of drawer */}
-              {!isMobile && (
-                <Grid item lg={4} sx={{ height: '100%' }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
-                    {/* Trading Signals */}
-                    <Paper sx={{ p: 2, flexGrow: 1, overflow: 'auto' }}>
-                      <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AutoAwesome />
-                        AI Signals
-                        <Badge badgeContent={signals.length} color="primary" />
-                      </Typography>
-                      {signals.length === 0 ? (
-                        <Alert severity="info">No active signals</Alert>
-                      ) : (
-                        signals.slice(0, 5).map((signal) => (
-                          <Card key={signal.id} sx={{ mb: 1, borderLeft: `4px solid ${
-                            signal.signal === 'BUY' ? theme.palette.success.main :
-                            signal.signal === 'SELL' ? theme.palette.error.main :
-                            theme.palette.warning.main
-                          }` }}>
-                            <CardContent sx={{ py: 1 }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                <Chip
-                                  label={signal.signal}
-                                  size="small"
-                                  color={signal.signal === 'BUY' ? 'success' : signal.signal === 'SELL' ? 'error' : 'warning'}
-                                />
-                                <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                                  {((signal.confidence || 0) * 100).toFixed(0)}%
-                                </Typography>
-                              </Box>
-                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                {signal.symbol} • ${signal.priceTarget?.toFixed(2) || '0.00'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {signal.reasoning?.[0] || 'Technical analysis'}
-                              </Typography>
-                            </CardContent>
-                          </Card>
-                        ))
-                      )}
-                    </Paper>
-
-                    {/* Notifications */}
-                    <Paper sx={{ p: 2, maxHeight: 200, overflow: 'auto' }}>
-                      <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Notifications />
-                        Notifications
-                        <Badge badgeContent={notifications.length} color="error" />
-                      </Typography>
-                      {notifications.length === 0 ? (
-                        <Typography variant="caption" color="text.secondary">
-                          No new notifications
-                        </Typography>
-                      ) : (
-                        notifications.slice(0, 5).map((notification, index) => (
-                          <Alert
-                            key={index}
-                            severity={notification.includes('ERROR') ? 'error' : 
-                                    notification.includes('WARNING') ? 'warning' : 'info'}
-                            size="small"
-                            sx={{ mb: 0.5 }}
-                          >
-                            {notification.replace(/^(INFO|WARNING|ERROR):\s*/, '')}
-                          </Alert>
-                        ))
-                      )}
-                    </Paper>
-                  </Box>
-                </Grid>
-              )}
             </Grid>
           </Box>
         </Box>
