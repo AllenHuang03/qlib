@@ -79,7 +79,7 @@ import {
   TrendingUp,
   BarChart
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 interface InstitutionalClientFlowProps {
   user: any;
@@ -685,7 +685,7 @@ const InstitutionalClientFlow: React.FC<InstitutionalClientFlowProps> = ({ user 
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
-                <Tooltip />
+                <RechartsTooltip />
                 <Area type="monotone" dataKey="banking" stackId="1" stroke="#2196f3" fill="#2196f3" />
                 <Area type="monotone" dataKey="healthcare" stackId="1" stroke="#4caf50" fill="#4caf50" />
                 <Area type="monotone" dataKey="mining" stackId="1" stroke="#ff9800" fill="#ff9800" />

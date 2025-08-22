@@ -66,7 +66,7 @@ import {
   Notifications,
   ContactSupport
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Bar, PieChart, Pie, Cell } from 'recharts';
 import { StaffUser, ClientPortfolio, TradingModel, TradingSignal, Position } from '../../types/staff';
 
 interface TradingAgentDashboardProps {
@@ -662,7 +662,7 @@ const TradingAgentDashboard: React.FC<TradingAgentDashboardProps> = ({ user }) =
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <RechartsTooltip />
                 </PieChart>
               </ResponsiveContainer>
             </Grid>
@@ -876,7 +876,7 @@ const TradingAgentDashboard: React.FC<TradingAgentDashboardProps> = ({ user }) =
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`$${value?.toLocaleString()}`, '']} />
+                  <RechartsTooltip formatter={(value) => [`$${value?.toLocaleString()}`, '']} />
                   <Line 
                     type="monotone" 
                     dataKey="portfolio" 

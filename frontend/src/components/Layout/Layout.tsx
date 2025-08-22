@@ -33,6 +33,7 @@ import {
   VerifiedUser,
   Speed,
   ShowChart,
+  Analytics,
 } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -97,6 +98,7 @@ export default function Layout({ children }: LayoutProps) {
         return [
           { text: "Institutional Center", icon: <Dashboard />, path: "/dashboard" },
           { text: "Multi-Asset Trading", icon: <Assessment />, path: "/trading-environment" },
+          { text: "Google Finance", icon: <Analytics />, path: "/google-finance" },
           { text: "Risk Management", icon: <VerifiedUser />, path: "/portfolio" },
           { text: "Compliance", icon: <Storage />, path: "/data" },
           { text: "Advanced Models", icon: <TrendingUp />, path: "/models" },
@@ -108,6 +110,7 @@ export default function Layout({ children }: LayoutProps) {
       return [
         { text: "Trading Center", icon: <Dashboard />, path: "/dashboard" },
         { text: "Live Trading Pro", icon: <Speed />, path: "/live-trading" },
+        { text: "Google Finance", icon: <Analytics />, path: "/google-finance" },
         { text: "Trading Environment", icon: <Assessment />, path: "/trading-environment" },
         { text: "Trader Agents", icon: <People />, path: "/trader-agents" },
         { text: "Models", icon: <TrendingUp />, path: "/models" },
@@ -123,6 +126,7 @@ export default function Layout({ children }: LayoutProps) {
       return [
         { text: "Premium Dashboard", icon: <Dashboard />, path: "/dashboard" },
         { text: "Live Trading", icon: <ShowChart />, path: "/live-trading" },
+        { text: "Google Finance", icon: <Analytics />, path: "/google-finance" },
         { text: "AI Insights Pro", icon: <TrendingUp />, path: "/insights" },
         { text: "Advanced Portfolio", icon: <AccountBalance />, path: "/portfolio" },
         { text: "Trading Environment", icon: <Assessment />, path: "/trading-environment" },
@@ -134,6 +138,7 @@ export default function Layout({ children }: LayoutProps) {
     // Default customer navigation (retail_customer or basic)
     return [
       { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
+      { text: "Market Analysis", icon: <Analytics />, path: "/google-finance" },
       { text: "AI Insights", icon: <TrendingUp />, path: "/insights" },
       { text: "Portfolio", icon: <AccountBalance />, path: "/portfolio" },
       { text: "Paper Trading", icon: <Assessment />, path: "/paper-trading" },

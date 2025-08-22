@@ -76,7 +76,7 @@ import {
   Share,
   ContentCopy
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 
 interface PremiumCustomerFlowProps {
   user: any;
@@ -660,7 +660,7 @@ const PremiumCustomerFlow: React.FC<PremiumCustomerFlowProps> = ({ user }) => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip />
+                <RechartsTooltip />
                 <Line type="monotone" dataKey="portfolio" stroke="#2196f3" strokeWidth={3} name="Your Portfolio" />
                 <Line type="monotone" dataKey="benchmark" stroke="#ff9800" strokeWidth={2} name="ASX 200 Benchmark" />
               </LineChart>
@@ -703,7 +703,7 @@ const PremiumCustomerFlow: React.FC<PremiumCustomerFlowProps> = ({ user }) => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <RechartsTooltip />
               </RechartsPieChart>
             </ResponsiveContainer>
           </CardContent>

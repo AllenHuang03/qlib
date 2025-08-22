@@ -129,8 +129,8 @@ const FallbackTradingChart: React.FC<FallbackTradingChartProps> = ({
         timestamp: candle.time ? new Date(candle.time).getTime() : Date.now() - (data.length - index) * 24 * 60 * 60 * 1000,
         volume: candle.volume || 0,
         // Add technical indicators with mock data if not available
-        sma20: indicators.find(i => i.type === 'SMA_20')?.values?.[index] || (close * (0.98 + Math.random() * 0.04)),
-        sma50: indicators.find(i => i.type === 'SMA_50')?.values?.[index] || (close * (0.96 + Math.random() * 0.08)),
+        sma20: (Array.isArray(indicators) ? indicators.find(i => i.type === 'SMA_20')?.values?.[index] : null) || (close * (0.98 + Math.random() * 0.04)),
+        sma50: (Array.isArray(indicators) ? indicators.find(i => i.type === 'SMA_50')?.values?.[index] : null) || (close * (0.96 + Math.random() * 0.08)),
       };
     });
   }, [data, indicators, symbol]);

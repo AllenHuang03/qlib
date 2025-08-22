@@ -76,6 +76,7 @@ import CompleteTradingChart from '../../components/enhanced/CompleteTradingChart
 import enhancedMarketDataService from '../../services/enhancedMarketDataService';
 import { marketAPI } from '../../services/api';
 import { CandlestickData, TechnicalIndicator, TradingSignal } from '../../types/market';
+import ErrorBoundary from '../../components/ErrorBoundary';
 
 interface LiveMarketQuote {
   symbol: string;
@@ -114,7 +115,7 @@ const LiveTradingDashboard: React.FC = () => {
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
 
   // Core state
-  const [selectedSymbol, setSelectedSymbol] = useState('CBA.AX');
+  const [selectedSymbol, setSelectedSymbol] = useState('');
   const [selectedTimeframe, setSelectedTimeframe] = useState('1d');
   const [assetClass, setAssetClass] = useState('equity');
   const [marketData, setMarketData] = useState<CandlestickData[]>([]);
@@ -169,16 +170,27 @@ const LiveTradingDashboard: React.FC = () => {
       try {
         const symbols = await enhancedMarketDataService.getSupportedSymbols();
         setSupportedSymbols(symbols);
+        
+        // Set initial symbol if not already set
+        if (!selectedSymbol && symbols.equity && symbols.equity.length > 0) {
+          setSelectedSymbol(symbols.equity[0]);
+        }
       } catch (error) {
         console.error('Error loading supported symbols:', error);
         // Fallback symbols
-        setSupportedSymbols({
+        const fallbackSymbols = {
           equity: ['CBA.AX', 'BHP.AX', 'CSL.AX', 'WBC.AX', 'ANZ.AX'],
           cryptocurrency: ['BTC.AX', 'ETH.AX', 'ADA.AX'],
           commodity: ['GOLD', 'SILVER', 'OIL.WTI'],
           fixed_income: ['AGB.2Y', 'AGB.5Y', 'AGB.10Y'],
           forex: ['AUDUSD', 'EURAUD', 'GBPAUD'],
-        });
+        };
+        setSupportedSymbols(fallbackSymbols);
+        
+        // Set initial symbol if not already set
+        if (!selectedSymbol && fallbackSymbols.equity.length > 0) {
+          setSelectedSymbol(fallbackSymbols.equity[0]);
+        }
       }
     };
 
@@ -187,6 +199,8 @@ const LiveTradingDashboard: React.FC = () => {
 
   // Initialize market data
   useEffect(() => {
+    if (!selectedSymbol) return; // Don't load data if no symbol is selected
+    
     const loadInitialData = async () => {
       try {
         // Load historical data
@@ -222,7 +236,7 @@ const LiveTradingDashboard: React.FC = () => {
 
   // Real-time data subscriptions
   useEffect(() => {
-    if (!isRealTimeActive) return;
+    if (!isRealTimeActive || !selectedSymbol) return;
 
     let unsubscribes: (() => void)[] = [];
 
@@ -741,15 +755,24 @@ const LiveTradingDashboard: React.FC = () => {
           {/* Chart and Analysis */}
           <Box sx={{ flexGrow: 1, p: isMobile ? 1 : 2, pt: 0, overflow: 'hidden' }}>
             <Grid container spacing={2} sx={{ height: '100%' }}>
-              {/* Professional Trading Chart - Full Width */}
+              {/* Professional Trading Chart - Full Width with Error Boundary */}
               <Grid item xs={12} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CompleteTradingChart
-                  symbol={selectedSymbol}
-                  initialData={marketData}
-                  height={isMobile ? 700 : 900}
-                  onTimeframeChange={handleTimeframeChange}
-                  realTimeEnabled={isRealTimeActive}
-                />
+                <ErrorBoundary
+                  resetKeys={[selectedSymbol, selectedTimeframe, isRealTimeActive]}
+                  resetOnPropsChange={true}
+                  onError={(error, errorInfo) => {
+                    console.error('Trading Chart Error:', error, errorInfo);
+                    addNotification('Chart error occurred, attempting recovery...', 'error');
+                  }}
+                >
+                  <CompleteTradingChart
+                    symbol={selectedSymbol || 'CBA.AX'}
+                    initialData={marketData || []}
+                    height={isMobile ? 700 : 900}
+                    onTimeframeChange={handleTimeframeChange}
+                    realTimeEnabled={isRealTimeActive}
+                  />
+                </ErrorBoundary>
               </Grid>
 
             </Grid>

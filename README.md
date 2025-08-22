@@ -1,6 +1,55 @@
-# Qlib Pro - Commercial Frontend
+# 🚀 Qlib Trading Platform
 
-A modern, professional frontend for the Qlib AI-powered quantitative trading platform.
+[![Frontend Port: 3000](https://img.shields.io/badge/Frontend-Port%203000-blue.svg)](http://localhost:3000)
+[![Backend Port: 3001](https://img.shields.io/badge/Backend-Port%203001-green.svg)](http://localhost:3001)
+[![WebSocket: 8080](https://img.shields.io/badge/WebSocket-Port%208080-orange.svg)](ws://localhost:8080)
+
+Professional-grade AI-powered quantitative trading platform with real-time market data, advanced charting, and comprehensive portfolio management.
+
+## 🎯 Quick Start
+
+### Option 1: Easy Start (Recommended)
+
+**Windows:**
+```cmd
+start.bat
+```
+
+**Linux/macOS:**
+```bash
+./start.sh
+```
+
+### Option 2: Manual Start
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 🌐 Access Points
+
+Once running, access the platform at:
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Main Dashboard** | [http://localhost:3000](http://localhost:3000) | Trading overview and portfolio summary |
+| **Live Trading** | [http://localhost:3000/live-trading](http://localhost:3000/live-trading) | Professional trading interface |
+| **Portfolio** | [http://localhost:3000/portfolio](http://localhost:3000/portfolio) | Portfolio management and analytics |
+| **Settings** | [http://localhost:3000/settings](http://localhost:3000/settings) | Platform configuration |
+
+## 🔧 Port Configuration
+
+### Production Ports
+- **Frontend**: `3000` (React/Vite) - Main web interface
+- **Backend API**: `3001` (Express/FastAPI) - REST API server
+- **WebSocket**: `8080` (Market Data) - Real-time data streaming
+- **Database**: `5432` (Supabase) - PostgreSQL database
+
+### Development Environment
+
+The platform automatically falls back to mock data if external services are unavailable, ensuring a smooth development experience.
 
 ## 🚀 Features
 

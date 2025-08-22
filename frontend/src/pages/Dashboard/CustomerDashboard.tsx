@@ -29,6 +29,9 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CustomerJourneyOrchestrator from '../../components/CustomerJourney/CustomerJourneyOrchestrator';
+import ValueProposition from '../../components/common/ValueProposition';
+import { navigationController } from '../../services/NavigationController';
+import WorkflowNavigator from '../../components/common/WorkflowNavigator';
 
 interface CustomerDashboardProps {
   user: any;
@@ -241,6 +244,103 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user, onStartKYC 
             </Button>
           </Box>
         </Alert>
+      )}
+
+      {/* Feature Highlights for New or Learning Users */}
+      {(!user?.portfolio_initialized || user?.userType === 'retail_customer') && (
+        <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #f5f7ff 0%, #e8f4fd 100%)', border: '1px solid #e3f2fd' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <School color="primary" />
+              {user?.portfolio_initialized ? 'Discover More Features' : 'Get Started with Professional Trading Tools'}
+            </Typography>
+            
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              {user?.portfolio_initialized ? 
+                'Explore advanced features to enhance your trading strategy' : 
+                'Start your investment journey with professional-grade tools designed for all experience levels'
+              }
+            </Typography>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <ValueProposition 
+                  featureId="paper-trading" 
+                  variant="inline"
+                  showCTA={false}
+                />
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button 
+                    variant="contained" 
+                    size="small" 
+                    onClick={() => navigationController.navigate('nav.paper-trading')}
+                  >
+                    Start Practice Trading
+                  </Button>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <ValueProposition 
+                  featureId="google-finance" 
+                  variant="inline"
+                  showCTA={false}
+                />
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    onClick={() => navigationController.navigate('nav.google-finance')}
+                  >
+                    Analyze Markets
+                  </Button>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <ValueProposition 
+                  featureId="ai-insights" 
+                  variant="inline"
+                  showCTA={false}
+                />
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    onClick={() => navigationController.navigate('nav.insights')}
+                  >
+                    Get AI Insights
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 3 }} />
+            
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Want to see all features?
+              </Typography>
+              <Button 
+                variant="text" 
+                onClick={() => navigationController.navigate('nav.features')}
+                endIcon={<PlayArrow />}
+              >
+                Explore Complete Feature Overview
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Smart Workflow Navigation */}
+      {user?.portfolio_initialized && (
+        <WorkflowNavigator 
+          userId={user?.id || 'demo-user'}
+          variant="card"
+          showRecommendations={true}
+          showJourneyProgress={true}
+        />
       )}
 
       <Grid container spacing={3}>

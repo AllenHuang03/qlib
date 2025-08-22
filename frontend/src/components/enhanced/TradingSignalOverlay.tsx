@@ -100,7 +100,7 @@ const TradingSignalOverlay: React.FC<TradingSignalOverlayProps> = ({
     return signals.filter(signal => 
       config.showSignals &&
       signal.confidence >= config.minConfidence &&
-      config.signalTypes.includes(signal.signal)
+      Array.isArray(config.signalTypes) && config.signalTypes.includes(signal.signal)
     );
   }, [signals, config]);
 

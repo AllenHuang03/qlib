@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 
 import Layout from './components/Layout/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
+import { SafeWrapper, LoadingWrapper } from './utils/safeguards';
+import './utils/platformTest';
+import './utils/emergencyNullProtection';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Models from './pages/Models/Models';
 import Backtesting from './pages/Backtesting/Backtesting';
@@ -23,12 +26,18 @@ import TraderAgents from './pages/TraderAgents/TraderAgents';
 import TradingEnvironment from './pages/Trading/TradingEnvironment';
 import AIInsights from './pages/AIInsights/AIInsights';
 import LiveTradingDashboard from './pages/enhanced/LiveTradingDashboard';
+import ProfessionalTradingPage from './pages/ProfessionalTrading/ProfessionalTradingPage';
+import GoogleFinancePage from './pages/GoogleFinance/GoogleFinancePage';
+import FeaturesOverview from './pages/Features/FeaturesOverview';
 import AboutUs from './pages/Legal/AboutUs';
 import ContactUs from './pages/Legal/ContactUs';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
 import TermsOfService from './pages/Legal/TermsOfService';
 import FAQ from './pages/Support/FAQ';
 import { useAuthStore } from './store/authStore';
+import './utils/systemDiagnostics';
+import NotificationProvider from './components/common/NotificationProvider';
+import ModalSystem from './components/common/ModalSystem';
 
 function App() {
   const { isAuthenticated, initializeAuth, loading } = useAuthStore();
@@ -41,11 +50,15 @@ function App() {
 
   // Public routes that don't require authentication
   const publicRoutes = ['/', '/landing', '/register', '/login', '/about', '/contact', '/privacy', '/terms', '/faq'];
-  const isPublicRoute = publicRoutes.includes(location.pathname);
+  const isPublicRoute = location?.pathname ? publicRoutes.includes(location.pathname) : false;
 
   // Show loading while initializing auth to prevent flash
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <LoadingWrapper loading={true} loadingText="Initializing Qlib Trading Platform...">
+        <div />
+      </LoadingWrapper>
+    );
   }
 
   // Show landing page for root path if not authenticated
@@ -62,17 +75,19 @@ function App() {
   if (isPublicRoute && !isAuthenticated) {
     return (
       <ErrorBoundary>
-        <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/landing" element={<Landing />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/contact" element={<ContactUs />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/faq" element={<FAQ />} />
-        </Routes>
+        <SafeWrapper>
+          <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/landing" element={<Landing />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/faq" element={<FAQ />} />
+          </Routes>
+        </SafeWrapper>
       </ErrorBoundary>
     );
   }
@@ -80,8 +95,10 @@ function App() {
   // Authenticated routes
   return (
     <ErrorBoundary>
-      <Layout>
-        <Routes>
+      <SafeWrapper>
+        <NotificationProvider>
+          <Layout>
+          <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/landing" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -99,6 +116,9 @@ function App() {
           <Route path="/trader-agents" element={<TraderAgents />} />
           <Route path="/trading-environment" element={<TradingEnvironment />} />
           <Route path="/live-trading" element={<LiveTradingDashboard />} />
+          <Route path="/professional-trading" element={<ProfessionalTradingPage />} />
+          <Route path="/google-finance" element={<GoogleFinancePage />} />
+          <Route path="/features" element={<FeaturesOverview />} />
           <Route path="/insights" element={<AIInsights />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
@@ -106,8 +126,11 @@ function App() {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Layout>
+          </Routes>
+          </Layout>
+          <ModalSystem />
+        </NotificationProvider>
+      </SafeWrapper>
     </ErrorBoundary>
   );
 }

@@ -7,6 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Toaster } from 'react-hot-toast';
 
 import App from './App';
+import { routerConfig } from './router/config';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -68,7 +69,7 @@ const theme = createTheme({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter future={routerConfig.future}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <CssBaseline />

@@ -41,7 +41,15 @@
       "Bash(npm install:*)",
       "WebFetch(domain:www.marketindex.com.au)",
       "Bash(ping:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(Stop-Process -Id 35288 -Force)",
+      "Bash(set PORT=8082)",
+      "Bash(start http://localhost:3001)",
+      "Bash(start http://localhost:3001/enhanced/live-trading-dashboard)",
+      "Bash(chmod:*)",
+      "Bash(start http://localhost:3000)",
+      "Bash(start http://localhost:3000/professional-trading)",
+      "Bash(start http://localhost:3000/google-finance)"
     ],
     "deny": []
   }

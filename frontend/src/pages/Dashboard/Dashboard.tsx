@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { useAuthStore } from '../../store/authStore';
 import CustomerDashboard from './CustomerDashboard';
 import TraderDashboard from './TraderDashboard';
-import AdminDashboard from './AdminDashboard';
+import AdminDashboard from '../Admin/AdminDashboard';
 import EnterpriseAdminDashboard from './EnterpriseAdminDashboard';
 import KYCStaffDashboard from './KYCStaffDashboard';
 import TradingAgentDashboard from './TradingAgentDashboard';

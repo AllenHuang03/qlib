@@ -34,6 +34,7 @@ import {
 } from '@mui/icons-material';
 
 import { CandlestickData, TechnicalIndicator } from '../../types/market';
+import { safeArray, safeIncludes, safeNumber, safeString, validateChartData, SafeWrapper } from '../../utils/safeguards';
 
 // Professional Chart Layout Configuration
 interface TradingChartLayout {
@@ -437,9 +438,9 @@ const TechnicalIndicatorsOverlay: React.FC<TechnicalIndicatorsOverlayProps> = ({
       height={height} 
       style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
     >
-      {indicators.includes('MA5') && renderMALine(ma5, '#ffeb3b', 'MA5')}
-      {indicators.includes('MA15') && renderMALine(ma15, '#ff9800', 'MA15')}
-      {indicators.includes('MA30') && renderMALine(ma30, '#f44336', 'MA30')}
+      {safeIncludes(indicators, 'MA5') && renderMALine(ma5, '#ffeb3b', 'MA5')}
+      {safeIncludes(indicators, 'MA15') && renderMALine(ma15, '#ff9800', 'MA15')}
+      {safeIncludes(indicators, 'MA30') && renderMALine(ma30, '#f44336', 'MA30')}
     </svg>
   );
 };
@@ -487,9 +488,10 @@ const ProfessionalChartToolbar: React.FC<ChartToolbarProps> = ({
   ];
 
   const handleIndicatorToggle = (indicatorValue: string) => {
-    const newIndicators = selectedIndicators.includes(indicatorValue)
-      ? selectedIndicators.filter(i => i !== indicatorValue)
-      : [...selectedIndicators, indicatorValue];
+    const currentIndicators = safeArray(selectedIndicators);
+    const newIndicators = safeIncludes(currentIndicators, indicatorValue)
+      ? currentIndicators.filter(i => i !== indicatorValue)
+      : [...currentIndicators, indicatorValue];
     onIndicatorsChange(newIndicators);
   };
 
@@ -561,7 +563,7 @@ const ProfessionalChartToolbar: React.FC<ChartToolbarProps> = ({
                 control={
                   <Checkbox
                     size="small"
-                    checked={selectedIndicators.includes(indicator.value)}
+                    checked={(selectedIndicators || []).includes(indicator.value)}
                     onChange={() => handleIndicatorToggle(indicator.value)}
                     sx={{ 
                       color: indicator.color,
@@ -573,9 +575,9 @@ const ProfessionalChartToolbar: React.FC<ChartToolbarProps> = ({
                   <Typography 
                     variant="caption" 
                     sx={{ 
-                      color: selectedIndicators.includes(indicator.value) ? indicator.color : 'text.secondary',
+                      color: (selectedIndicators || []).includes(indicator.value) ? indicator.color : 'text.secondary',
                       fontFamily: 'monospace',
-                      fontWeight: selectedIndicators.includes(indicator.value) ? 'bold' : 'normal'
+                      fontWeight: (selectedIndicators || []).includes(indicator.value) ? 'bold' : 'normal'
                     }}
                   >
                     {indicator.label}

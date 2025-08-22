@@ -42,6 +42,7 @@ import {
 import { CandlestickData, TechnicalIndicator } from '../../types/market';
 import VolumeChart from './VolumeChart';
 import { liveDataManager } from '../../services/LiveDataManager';
+import { ChartErrorBoundary } from '../ErrorBoundary';
 
 interface CompleteTradingChartProps {
   symbol: string;
@@ -137,17 +138,17 @@ const LivePriceDisplay: React.FC<{ symbol: string; data: CandlestickData[] }> = 
           </Box>
         </Box>
 
-        {/* Additional Metrics */}
-        {data.length > 0 && (
+        {/* Additional Metrics with enhanced null safety */}
+        {data && data.length > 0 && data[data.length - 1] && (
           <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
             <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-              High: ${data[data.length - 1].high.toFixed(2)}
+              High: ${((data[data.length - 1] && data[data.length - 1].high) || 0).toFixed(2)}
             </Typography>
             <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-              Low: ${data[data.length - 1].low.toFixed(2)}
+              Low: ${((data[data.length - 1] && data[data.length - 1].low) || 0).toFixed(2)}
             </Typography>
             <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-              Volume: {(data[data.length - 1].volume / 1000000).toFixed(1)}M
+              Volume: {(((data[data.length - 1] && data[data.length - 1].volume) || 0) / 1000000).toFixed(1)}M
             </Typography>
           </Box>
         )}
@@ -198,9 +199,10 @@ const ChartControls: React.FC<{
   ];
 
   const handleIndicatorToggle = (indicatorValue: string) => {
-    const newIndicators = selectedIndicators.includes(indicatorValue)
-      ? selectedIndicators.filter(i => i !== indicatorValue)
-      : [...selectedIndicators, indicatorValue];
+    const currentIndicators = selectedIndicators || [];
+    const newIndicators = Array.isArray(currentIndicators) && currentIndicators.includes(indicatorValue)
+      ? currentIndicators.filter(i => i !== indicatorValue)
+      : [...currentIndicators, indicatorValue];
     onIndicatorChange(newIndicators);
   };
 
@@ -261,7 +263,7 @@ const ChartControls: React.FC<{
                 control={
                   <Checkbox
                     size="small"
-                    checked={selectedIndicators.includes(indicator.value)}
+                    checked={Array.isArray(selectedIndicators) && selectedIndicators.includes(indicator.value)}
                     onChange={() => handleIndicatorToggle(indicator.value)}
                     sx={{ 
                       color: indicator.color,
@@ -273,7 +275,7 @@ const ChartControls: React.FC<{
                   <Typography 
                     variant="caption" 
                     sx={{ 
-                      color: selectedIndicators.includes(indicator.value) ? indicator.color : 'text.secondary',
+                      color: Array.isArray(selectedIndicators) && selectedIndicators.includes(indicator.value) ? indicator.color : 'text.secondary',
                       fontFamily: 'monospace'
                     }}
                   >
@@ -378,17 +380,26 @@ const CompleteTradingChart: React.FC<CompleteTradingChartProps> = ({
     if (realTimeEnabled) {
       setConnectionStatus('connecting');
       
-      // Try to connect to live data
-      liveDataManager.connect().then(() => {
+      // Try to connect to live data with comprehensive fallback
+      liveDataManager.connectWithFallback().then(() => {
         setConnectionStatus('connected');
         
         const subscriptionId = liveDataManager.subscribe(symbol, (newData) => {
           setData(prevData => {
+            if (!newData || !prevData || prevData.length === 0) {
+              return prevData;
+            }
+            
             const updatedData = [...prevData];
             
             // Check if this is an update to the last candle or a new candle
             const lastCandle = updatedData[updatedData.length - 1];
-            const timeDiff = newData.time - lastCandle.time;
+            if (!lastCandle) {
+              updatedData.push(newData);
+              return updatedData;
+            }
+            
+            const timeDiff = (newData.time || 0) - (lastCandle.time || 0);
             
             if (timeDiff < 60000) { // Same minute, update last candle
               updatedData[updatedData.length - 1] = newData;
@@ -480,35 +491,39 @@ const CompleteTradingChart: React.FC<CompleteTradingChartProps> = ({
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         {/* Left: Charts */}
         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* Main Price Chart */}
+          {/* Main Price Chart with Error Boundary */}
           <Box sx={{ flexGrow: 1, p: 1 }}>
             <Paper sx={{ height: chartHeight, p: 1, overflow: 'hidden' }}>
-              {/* We'll use the existing ProfessionalCandlestickRenderer here */}
-              <Box sx={{ 
-                width: '100%', 
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: theme.palette.background.paper,
-                border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                borderRadius: 1
-              }}>
-                <Typography variant="h6" color="text.secondary">
-                  专业K线图表 • {symbol} • {data.length} 数据点 • {selectedTimeframe.toUpperCase()}
-                </Typography>
-              </Box>
+              <ChartErrorBoundary>
+                {/* We'll use the existing ProfessionalCandlestickRenderer here */}
+                <Box sx={{ 
+                  width: '100%', 
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: theme.palette.background.paper,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                  borderRadius: 1
+                }}>
+                  <Typography variant="h6" color="text.secondary">
+                    专业K线图表 • {symbol || 'Loading...'} • {data?.length || 0} 数据点 • {selectedTimeframe?.toUpperCase() || '1H'}
+                  </Typography>
+                </Box>
+              </ChartErrorBoundary>
             </Paper>
           </Box>
 
-          {/* Volume Chart */}
+          {/* Volume Chart with Error Boundary */}
           <Box sx={{ p: 1 }}>
             <Paper sx={{ overflow: 'hidden' }}>
-              <VolumeChart
-                data={data}
-                width={800} // This will be calculated dynamically
-                height={volumeHeight}
-              />
+              <ChartErrorBoundary>
+                <VolumeChart
+                  data={data || []}
+                  width={800} // This will be calculated dynamically
+                  height={volumeHeight}
+                />
+              </ChartErrorBoundary>
             </Paper>
           </Box>
         </Box>
@@ -536,16 +551,16 @@ const CompleteTradingChart: React.FC<CompleteTradingChartProps> = ({
             {data.length > 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Typography variant="caption">
-                  24h Volume: {(data.reduce((sum, d) => sum + d.volume, 0) / 1000000).toFixed(1)}M
+                  24h Volume: {(data.reduce((sum, d) => sum + (d?.volume || 0), 0) / 1000000).toFixed(1)}M
                 </Typography>
                 <Typography variant="caption">
-                  24h High: ${Math.max(...data.map(d => d.high)).toFixed(2)}
+                  24h High: ${Math.max(...data.map(d => d?.high || 0).filter(h => h > 0)).toFixed(2)}
                 </Typography>
                 <Typography variant="caption">
-                  24h Low: ${Math.min(...data.map(d => d.low)).toFixed(2)}
+                  24h Low: ${Math.min(...data.map(d => d?.low || Infinity).filter(l => l < Infinity)).toFixed(2)}
                 </Typography>
                 <Typography variant="caption">
-                  Avg Volume: {(data.reduce((sum, d) => sum + d.volume, 0) / data.length / 1000000).toFixed(1)}M
+                  Avg Volume: {(data.reduce((sum, d) => sum + (d?.volume || 0), 0) / Math.max(1, data.length) / 1000000).toFixed(1)}M
                 </Typography>
               </Box>
             )}

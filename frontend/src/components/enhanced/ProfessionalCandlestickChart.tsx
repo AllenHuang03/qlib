@@ -393,9 +393,9 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
     // Setup click handling for signals
     chart.subscribeClick((param) => {
       if (param.time && onSignalClick) {
-        const clickedSignal = signals.find(signal => 
+        const clickedSignal = Array.isArray(signals) ? signals.find(signal => 
           Math.abs(signal.timestamp / 1000 - (param.time as number)) < 3600 // Within 1 hour
-        );
+        ) : null;
         if (clickedSignal) {
           onSignalClick(clickedSignal);
         }
@@ -531,9 +531,9 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
     });
 
     // Add Bollinger Bands with fill area
-    const bbUpper = indicators.find(ind => ind.type === 'BOLLINGER_UPPER');
-    const bbLower = indicators.find(ind => ind.type === 'BOLLINGER_LOWER');
-    const bbMiddle = indicators.find(ind => ind.type === 'BOLLINGER_MIDDLE');
+    const bbUpper = Array.isArray(indicators) ? indicators.find(ind => ind.type === 'BOLLINGER_UPPER') : null;
+    const bbLower = Array.isArray(indicators) ? indicators.find(ind => ind.type === 'BOLLINGER_LOWER') : null;
+    const bbMiddle = Array.isArray(indicators) ? indicators.find(ind => ind.type === 'BOLLINGER_MIDDLE') : null;
 
     if (bbUpper && bbLower && bbMiddle) {
       // Add fill area between bands (simplified implementation)
@@ -636,7 +636,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
 
   // Handle timeframe change with validation
   const handleTimeframeChange = (newTimeframe: string) => {
-    const timeframe = timeframes.find(tf => tf.value === newTimeframe);
+    const timeframe = Array.isArray(timeframes) ? timeframes.find(tf => tf.value === newTimeframe) : null;
     if (timeframe && !timeframe.disabled) {
       console.log('Timeframe changed to:', newTimeframe);
       setConfig(prev => ({ ...prev, timeframe: newTimeframe as any }));
@@ -647,7 +647,7 @@ const ProfessionalCandlestickChart: React.FC<ProfessionalCandlestickChartProps> 
   // Handle indicator toggle
   const handleIndicatorToggle = (indicatorId: string) => {
     const currentIndicators = config.indicators || [];
-    const isEnabled = currentIndicators.includes(indicatorId);
+    const isEnabled = Array.isArray(currentIndicators) && currentIndicators.includes(indicatorId);
     
     let newIndicators: string[];
     if (isEnabled) {
